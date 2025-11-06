@@ -38,6 +38,12 @@ param postgresAdminUsername string = 'sqladmin'
 @minLength(12)
 param postgresAdminPassword string
 
+@description('Container image for the API (default: placeholder hello-world image)')
+param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+
+@description('Azure Container Registry name (optional, only needed for custom images from ACR)')
+param acrName string = ''
+
 @description('Tags to apply to all resources')
 param tags object = {
   Environment: environmentName
@@ -78,6 +84,9 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   location: location
   tags: tags
 }
+
+// Note: Role assignment for ACR pull must be granted manually or via separate deployment
+// Command: az role assignment create --assignee <managed-identity-principal-id> --role AcrPull --scope /subscriptions/<sub-id>/resourceGroups/<acr-rg>/providers/Microsoft.ContainerRegistry/registries/<acr-name>
 
 // Virtual Network
 resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
@@ -261,11 +270,17 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     environmentId: containerAppEnv.id
     configuration: {
       ingress: {
-        external: false
-        targetPort: 80  // Changed to 80 to match the placeholder hello-world image
+        external: true  // External ingress required for APIM to reach the Container App
+        targetPort: contains(containerImage, 'helloworld') ? 80 : 8000  // Use port 80 for placeholder, 8000 for custom API
         transport: 'http'
         allowInsecure: false
       }
+      registries: !empty(acrName) ? [
+        {
+          server: '${acrName}.azurecr.io'
+          identity: managedIdentity.id
+        }
+      ] : []
       secrets: [
         {
           name: 'db-connection-string'
@@ -281,22 +296,30 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'api-container'
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest' // Placeholder image (listens on port 80)
+          image: containerImage
           resources: {
             cpu: json('0.5')
             memory: '1Gi'
           }
-          env: [
-            {
-              name: 'DATABASE_URL'
-              secretRef: 'db-connection-string'
-            }
-            {
-              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-              secretRef: 'appinsights-connection-string'
-            }
-            // PORT removed - the hello-world image ignores this and always uses port 80
-          ]
+          env: concat(
+            [
+              {
+                name: 'DATABASE_URL'
+                secretRef: 'db-connection-string'
+              }
+              {
+                name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+                secretRef: 'appinsights-connection-string'
+              }
+            ],
+            // Add PORT environment variable only for custom API (not for placeholder)
+            contains(containerImage, 'helloworld') ? [] : [
+              {
+                name: 'PORT'
+                value: '8000'
+              }
+            ]
+          )
         }
       ]
       scale: {
@@ -375,6 +398,217 @@ resource apimApi 'Microsoft.ApiManagement/service/apis@2023-09-01-preview' = {
     ]
     serviceUrl: 'https://${containerApp.properties.configuration.ingress.fqdn}'
     subscriptionRequired: true
+  }
+}
+
+// APIM API Operations
+// Health check endpoint
+resource apimHealthOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'health-check'
+  properties: {
+    displayName: 'Health Check'
+    method: 'GET'
+    urlTemplate: '/health'
+    description: 'Check if the API is running and healthy'
+    responses: [
+      {
+        statusCode: 200
+        description: 'API is healthy'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+    ]
+  }
+}
+
+// Get root endpoint
+resource apimRootOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'get-root'
+  properties: {
+    displayName: 'Get Root'
+    method: 'GET'
+    urlTemplate: '/'
+    description: 'Get API information and available endpoints'
+    responses: [
+      {
+        statusCode: 200
+        description: 'API information'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+    ]
+  }
+}
+
+// List all items
+resource apimListItemsOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'list-items'
+  properties: {
+    displayName: 'List Items'
+    method: 'GET'
+    urlTemplate: '/items'
+    description: 'Get all items from the database'
+    responses: [
+      {
+        statusCode: 200
+        description: 'List of items'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+    ]
+  }
+}
+
+// Create new item
+resource apimCreateItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'create-item'
+  properties: {
+    displayName: 'Create Item'
+    method: 'POST'
+    urlTemplate: '/items'
+    description: 'Create a new item in the database'
+    request: {
+      representations: [
+        {
+          contentType: 'application/json'
+        }
+      ]
+    }
+    responses: [
+      {
+        statusCode: 201
+        description: 'Item created successfully'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+      {
+        statusCode: 400
+        description: 'Invalid request'
+      }
+    ]
+  }
+}
+
+// Get item by ID
+resource apimGetItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'get-item'
+  properties: {
+    displayName: 'Get Item'
+    method: 'GET'
+    urlTemplate: '/items/{id}'
+    description: 'Get a specific item by ID'
+    templateParameters: [
+      {
+        name: 'id'
+        type: 'integer'
+        required: true
+        description: 'Item ID'
+      }
+    ]
+    responses: [
+      {
+        statusCode: 200
+        description: 'Item details'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+      {
+        statusCode: 404
+        description: 'Item not found'
+      }
+    ]
+  }
+}
+
+// Update item by ID
+resource apimUpdateItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'update-item'
+  properties: {
+    displayName: 'Update Item'
+    method: 'PUT'
+    urlTemplate: '/items/{id}'
+    description: 'Update an existing item'
+    templateParameters: [
+      {
+        name: 'id'
+        type: 'integer'
+        required: true
+        description: 'Item ID'
+      }
+    ]
+    request: {
+      representations: [
+        {
+          contentType: 'application/json'
+        }
+      ]
+    }
+    responses: [
+      {
+        statusCode: 200
+        description: 'Item updated successfully'
+        representations: [
+          {
+            contentType: 'application/json'
+          }
+        ]
+      }
+      {
+        statusCode: 404
+        description: 'Item not found'
+      }
+    ]
+  }
+}
+
+// Delete item by ID
+resource apimDeleteItemOperation 'Microsoft.ApiManagement/service/apis/operations@2023-09-01-preview' = {
+  parent: apimApi
+  name: 'delete-item'
+  properties: {
+    displayName: 'Delete Item'
+    method: 'DELETE'
+    urlTemplate: '/items/{id}'
+    description: 'Delete an item by ID'
+    templateParameters: [
+      {
+        name: 'id'
+        type: 'integer'
+        required: true
+        description: 'Item ID'
+      }
+    ]
+    responses: [
+      {
+        statusCode: 204
+        description: 'Item deleted successfully'
+      }
+      {
+        statusCode: 404
+        description: 'Item not found'
+      }
+    ]
   }
 }
 
