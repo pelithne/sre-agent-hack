@@ -58,13 +58,13 @@ az account show
 
 ## Step 3: Create Resource Group
 
-Choose a unique name for your resource group and create it in your preferred region:
+Choose a unique base name (3-15 characters, lowercase) that will be used for all resources:
 
 ```bash
-# Set variables
-RESOURCE_GROUP="sre-workshop-<your-initials>"
-LOCATION="swedencentral"  # Or your preferred region
+# Set variables - customize the BASE_NAME with your initials
 BASE_NAME="sre<your-initials>"  # Must be 3-15 characters, lowercase
+LOCATION="swedencentral"  # Or your preferred region
+RESOURCE_GROUP="${BASE_NAME}-workshop"
 
 # Create resource group
 az group create \
@@ -74,9 +74,11 @@ az group create \
 
 **Example:**
 ```bash
-RESOURCE_GROUP="sre-workshop-pk"
 BASE_NAME="srepk"
+RESOURCE_GROUP="srepk-workshop"
 ```
+
+> **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named.
 
 ---
 
@@ -511,8 +513,8 @@ Now that your infrastructure is deployed and tested, you're ready for:
 Save these for use in later exercises:
 
 ```bash
-export RESOURCE_GROUP="sre-workshop-<your-initials>"
 export BASE_NAME="sre<your-initials>"
+export RESOURCE_GROUP="${BASE_NAME}-workshop"
 export APIM_URL="<your-apim-gateway-url>"
 export SUBSCRIPTION_KEY="<your-subscription-key>"
 export ACR_NAME="<your-acr-name>"
