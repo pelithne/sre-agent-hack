@@ -271,7 +271,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     environmentId: containerAppEnv.id
     configuration: {
       ingress: {
-        external: false
+        external: true  // External ingress required for APIM to reach the Container App
         targetPort: contains(containerImage, 'helloworld') ? 80 : 8000  // Use port 80 for placeholder, 8000 for custom API
         transport: 'http'
         allowInsecure: false
