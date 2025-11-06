@@ -494,8 +494,6 @@ resource apimCreateItemOperation 'Microsoft.ApiManagement/service/apis/operation
       representations: [
         {
           contentType: 'application/json'
-          schemaId: 'item-schema'
-          typeName: 'ItemCreate'
         }
       ]
     }
@@ -573,8 +571,6 @@ resource apimUpdateItemOperation 'Microsoft.ApiManagement/service/apis/operation
       representations: [
         {
           contentType: 'application/json'
-          schemaId: 'item-schema'
-          typeName: 'ItemUpdate'
         }
       ]
     }
