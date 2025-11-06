@@ -120,7 +120,7 @@ Or use the provided script:
 
 ## Step 6: Deploy Infrastructure
 
-Deploy the complete infrastructure with the custom API:
+Deploy the complete workshop infrastructure:
 
 ```bash
 az deployment group create \
@@ -488,7 +488,7 @@ Before moving to Part 2, verify:
 
 - [ ] All 7 APIM operations are visible in the portal
 - [ ] Health check endpoint returns 200 OK
-- [ ] At least one CRUD operation works (if using custom API)
+- [ ] At least one CRUD operation works (create or list items)
 - [ ] Application Insights shows recent requests
 - [ ] Container App is running and healthy
 - [ ] PostgreSQL database is accessible from Container App
@@ -515,7 +515,7 @@ export RESOURCE_GROUP="sre-workshop-<your-initials>"
 export BASE_NAME="sre<your-initials>"
 export APIM_URL="<your-apim-gateway-url>"
 export SUBSCRIPTION_KEY="<your-subscription-key>"
-export ACR_NAME="<your-acr-name>"  # If using custom API
+export ACR_NAME="<your-acr-name>"
 ```
 
 ### Useful Commands
