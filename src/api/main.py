@@ -15,9 +15,6 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from opencensus.ext.azure.log_exporter import AzureLogHandler
-from opencensus.ext.azure.trace_exporter import AzureExporter
-from opencensus.ext.fastapi import FastAPIMiddleware
-from opencensus.trace.samplers import ProbabilitySampler
 
 # Configuration
 PORT = int(os.getenv("PORT", "8000"))
@@ -100,13 +97,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add Application Insights middleware if enabled
-if APPLICATIONINSIGHTS_CONNECTION_STRING:
-    app.add_middleware(
-        FastAPIMiddleware,
-        exporter=AzureExporter(connection_string=APPLICATIONINSIGHTS_CONNECTION_STRING),
-        sampler=ProbabilitySampler(rate=1.0),
-    )
+# Note: Application Insights logging is enabled via AzureLogHandler
+# For request tracing, consider using OpenTelemetry in production
 
 # Pydantic models
 class Item(BaseModel):
