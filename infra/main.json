@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.30.23.60470",
-      "templateHash": "7920419411534182023"
+      "templateHash": "8382489083116565123"
     }
   },
   "parameters": {
@@ -54,6 +54,20 @@
       "defaultValue": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
       "metadata": {
         "description": "Container image for the API (default: placeholder hello-world image)"
+      }
+    },
+    "acrName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure Container Registry name (optional, only needed for custom images)"
+      }
+    },
+    "acrPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure Container Registry password (optional, only needed for custom images)"
       }
     },
     "tags": {
@@ -289,21 +303,13 @@
         "environmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
         "configuration": {
           "ingress": {
-            "external": false,
+            "external": true,
             "targetPort": "[if(contains(parameters('containerImage'), 'helloworld'), 80, 8000)]",
             "transport": "http",
             "allowInsecure": false
           },
-          "secrets": [
-            {
-              "name": "db-connection-string",
-              "value": "[format('postgresql://{0}:{1}@{2}:5432/workshopdb?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName')), '2023-12-01-preview').fullyQualifiedDomainName)]"
-            },
-            {
-              "name": "appinsights-connection-string",
-              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
-            }
-          ]
+          "registries": "[if(not(empty(parameters('acrName'))), createArray(createObject('server', format('{0}.azurecr.io', parameters('acrName')), 'username', parameters('acrName'), 'passwordSecretRef', 'acr-password')), createArray())]",
+          "secrets": "[concat(createArray(createObject('name', 'db-connection-string', 'value', format('postgresql://{0}:{1}@{2}:5432/workshopdb?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName')), '2023-12-01-preview').fullyQualifiedDomainName)), createObject('name', 'appinsights-connection-string', 'value', reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString)), if(not(empty(parameters('acrPassword'))), createArray(createObject('name', 'acr-password', 'value', parameters('acrPassword'))), createArray()))]"
         },
         "template": {
           "containers": [
@@ -408,6 +414,230 @@
       "dependsOn": [
         "[resourceId('Microsoft.ApiManagement/service', variables('apimName'))]",
         "[resourceId('Microsoft.App/containerApps', variables('containerAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}/{2}', variables('apimName'), 'workshop-api', 'health-check')]",
+      "properties": {
+        "displayName": "Health Check",
+        "method": "GET",
+        "urlTemplate": "/health",
+        "description": "Check if the API is running and healthy",
+        "responses": [
+          {
+            "statusCode": 200,
+            "description": "API is healthy",
+            "representations": [
+              {
+                "contentType": "application/json"
+              }
+            ]
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apis', variables('apimName'), 'workshop-api')]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}/{2}', variables('apimName'), 'workshop-api', 'get-root')]",
+      "properties": {
+        "displayName": "Get Root",
+        "method": "GET",
+        "urlTemplate": "/",
+        "description": "Get API information and available endpoints",
+        "responses": [
+          {
+            "statusCode": 200,
+            "description": "API information",
+            "representations": [
+              {
+                "contentType": "application/json"
+              }
+            ]
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apis', variables('apimName'), 'workshop-api')]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}/{2}', variables('apimName'), 'workshop-api', 'list-items')]",
+      "properties": {
+        "displayName": "List Items",
+        "method": "GET",
+        "urlTemplate": "/items",
+        "description": "Get all items from the database",
+        "responses": [
+          {
+            "statusCode": 200,
+            "description": "List of items",
+            "representations": [
+              {
+                "contentType": "application/json"
+              }
+            ]
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apis', variables('apimName'), 'workshop-api')]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}/{2}', variables('apimName'), 'workshop-api', 'create-item')]",
+      "properties": {
+        "displayName": "Create Item",
+        "method": "POST",
+        "urlTemplate": "/items",
+        "description": "Create a new item in the database",
+        "request": {
+          "representations": [
+            {
+              "contentType": "application/json"
+            }
+          ]
+        },
+        "responses": [
+          {
+            "statusCode": 201,
+            "description": "Item created successfully",
+            "representations": [
+              {
+                "contentType": "application/json"
+              }
+            ]
+          },
+          {
+            "statusCode": 400,
+            "description": "Invalid request"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apis', variables('apimName'), 'workshop-api')]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}/{2}', variables('apimName'), 'workshop-api', 'get-item')]",
+      "properties": {
+        "displayName": "Get Item",
+        "method": "GET",
+        "urlTemplate": "/items/{id}",
+        "description": "Get a specific item by ID",
+        "templateParameters": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Item ID"
+          }
+        ],
+        "responses": [
+          {
+            "statusCode": 200,
+            "description": "Item details",
+            "representations": [
+              {
+                "contentType": "application/json"
+              }
+            ]
+          },
+          {
+            "statusCode": 404,
+            "description": "Item not found"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apis', variables('apimName'), 'workshop-api')]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}/{2}', variables('apimName'), 'workshop-api', 'update-item')]",
+      "properties": {
+        "displayName": "Update Item",
+        "method": "PUT",
+        "urlTemplate": "/items/{id}",
+        "description": "Update an existing item",
+        "templateParameters": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Item ID"
+          }
+        ],
+        "request": {
+          "representations": [
+            {
+              "contentType": "application/json"
+            }
+          ]
+        },
+        "responses": [
+          {
+            "statusCode": 200,
+            "description": "Item updated successfully",
+            "representations": [
+              {
+                "contentType": "application/json"
+              }
+            ]
+          },
+          {
+            "statusCode": 404,
+            "description": "Item not found"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apis', variables('apimName'), 'workshop-api')]"
+      ]
+    },
+    {
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2023-09-01-preview",
+      "name": "[format('{0}/{1}/{2}', variables('apimName'), 'workshop-api', 'delete-item')]",
+      "properties": {
+        "displayName": "Delete Item",
+        "method": "DELETE",
+        "urlTemplate": "/items/{id}",
+        "description": "Delete an item by ID",
+        "templateParameters": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Item ID"
+          }
+        ],
+        "responses": [
+          {
+            "statusCode": 204,
+            "description": "Item deleted successfully"
+          },
+          {
+            "statusCode": 404,
+            "description": "Item not found"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ApiManagement/service/apis', variables('apimName'), 'workshop-api')]"
       ]
     }
   ],
