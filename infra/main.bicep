@@ -41,6 +41,13 @@ param postgresAdminPassword string
 @description('Container image for the API (default: placeholder hello-world image)')
 param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
+@description('Azure Container Registry name (optional, only needed for custom images)')
+param acrName string = ''
+
+@description('Azure Container Registry password (optional, only needed for custom images)')
+@secure()
+param acrPassword string = ''
+
 @description('Tags to apply to all resources')
 param tags object = {
   Environment: environmentName
@@ -269,16 +276,31 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         transport: 'http'
         allowInsecure: false
       }
-      secrets: [
+      registries: !empty(acrName) ? [
         {
-          name: 'db-connection-string'
-          value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/workshopdb?sslmode=require'
+          server: '${acrName}.azurecr.io'
+          username: acrName
+          passwordSecretRef: 'acr-password'
         }
-        {
-          name: 'appinsights-connection-string'
-          value: appInsights.properties.ConnectionString
-        }
-      ]
+      ] : []
+      secrets: concat(
+        [
+          {
+            name: 'db-connection-string'
+            value: 'postgresql://${postgresAdminUsername}:${postgresAdminPassword}@${postgresServer.properties.fullyQualifiedDomainName}:5432/workshopdb?sslmode=require'
+          }
+          {
+            name: 'appinsights-connection-string'
+            value: appInsights.properties.ConnectionString
+          }
+        ],
+        !empty(acrPassword) ? [
+          {
+            name: 'acr-password'
+            value: acrPassword
+          }
+        ] : []
+      )
     }
     template: {
       containers: [
