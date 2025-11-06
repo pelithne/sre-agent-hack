@@ -11,7 +11,7 @@ param environmentName = 'dev'
 param baseName = 'sreagent'
 
 // PostgreSQL configuration
-param postgresAdminUsername = 'workshopadmin'
+param postgresAdminUsername = 'sqladmin'
 
 // Container image configuration
 // Default: Placeholder hello-world image (listens on port 80)
