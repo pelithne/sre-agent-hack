@@ -31,15 +31,16 @@ Before starting the workshop, ensure you have:
 - **Azure Subscription** with contributor access
 - **Azure CLI** (version 2.50.0 or later) - [Install](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - **Git** - [Install](https://git-scm.com/downloads)
-- **Docker** - [Install](https://docs.docker.com/get-docker/)
 - **Visual Studio Code** (recommended) - [Install](https://code.visualstudio.com/)
 - **Azure SRE Agent** access - [Setup Guide](https://learn.microsoft.com/azure/sre-agent/)
+
+> **Note:** Docker is NOT required. Container images are built using Azure Container Registry build tasks.
 
 ### Recommended
 - **Bicep CLI** - [Install](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install)
 - Basic understanding of:
   - REST APIs
-  - Containers and Docker
+  - Containers and containerization concepts
   - Azure fundamentals
   - SQL/PostgreSQL
 

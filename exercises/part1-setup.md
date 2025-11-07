@@ -18,8 +18,9 @@ Before starting, ensure you have:
 1. **Azure Subscription** with appropriate permissions to create resources
 2. **Azure CLI** installed and configured ([Install guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli))
 3. **Git** installed
-4. **Docker** installed (optional, for building custom images)
-5. **jq** installed for JSON parsing (optional, for testing)
+4. **jq** installed for JSON parsing (optional, for testing)
+
+> **Note:** Docker is NOT required. Container images are built using Azure Container Registry build tasks.
 
 ## Learning Objectives
 
@@ -101,22 +102,20 @@ az acr create \
 
 ## Step 5: Build and Push API Image
 
-Build the FastAPI application container image and push it to ACR:
+Build the FastAPI application container image using Azure Container Registry build tasks:
 
 ```bash
-# Login to ACR
-az acr login --name $ACR_NAME
-
-# Build and push the image
-cd src/api
-docker build -t $ACR_NAME.azurecr.io/workshop-api:v1.0.0 .
-docker push $ACR_NAME.azurecr.io/workshop-api:v1.0.0
-cd ../..
+# Build and push the image using ACR build tasks
+az acr build \
+  --registry $ACR_NAME \
+  --image workshop-api:v1.0.0 \
+  --file src/api/Dockerfile \
+  src/api
 ```
 
-> **Note:** This builds the Docker image from the FastAPI application source code and pushes it to your Azure Container Registry. The build process typically takes 1-2 minutes.
+> **Note:** ACR build tasks build the container image in the cloud, so you don't need Docker installed locally. The build process typically takes 1-2 minutes. You can watch the build logs in real-time as ACR builds and pushes the image.
 
-------
+---
 
 ## Step 6: Deploy Infrastructure
 

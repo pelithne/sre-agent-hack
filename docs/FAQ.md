@@ -20,9 +20,11 @@ You can complete sections at your own pace.
 A: You need:
 - Azure subscription with contributor access
 - Azure CLI installed and configured
-- Docker installed (if building custom images)
+- Git for cloning the repository
 - Basic understanding of REST APIs and cloud concepts
 - Azure SRE Agent created and configured (see Part 2 instructions)
+
+> **Note:** Docker is NOT required. Container images are built using Azure Container Registry build tasks.
 
 ---
 
