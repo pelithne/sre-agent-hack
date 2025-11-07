@@ -254,17 +254,16 @@ Identify the performance bottleneck and optimize.
 
 ### Step 1: Simulate the Performance Issue
 
-Reduce the Container App resources to create resource contention:
+Enable slow mode to simulate slow database queries:
 
 ```bash
 az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --cpu 0.25 \
-  --memory 0.5Gi
+  --set-env-vars "SLOW_MODE_DELAY=3.0"
 ```
 
-Wait about 30 seconds for the new revision to deploy.
+Wait about 30 seconds for the new revision to deploy with slow mode enabled.
 
 ### Step 2: Measure Current Performance
 
@@ -310,20 +309,23 @@ az monitor app-insights query \
   --output table
 ```
 
-### Step 5: Check Container App Resources
+### Step 5: Check Container App Environment Variables
 
 Ask Azure SRE Agent:
 ```
-My Container App API is slow. How can I check if it's under-resourced?
+My Container App API is slow. Could environment variables be affecting performance?
 ```
 
-Check the current resource allocation:
+Check the current environment variables:
 
 ```bash
 az containerapp show \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --query "properties.template.containers[0].resources"
+  --query "properties.template.containers[0].env[?name=='SLOW_MODE_DELAY']"
+```
+
+You should see `SLOW_MODE_DELAY` set to `3.0`, which is causing the artificial delay.
 ```
 
 ### Step 6: Investigate Database Performance
@@ -353,26 +355,26 @@ az monitor metrics list \
 
 Ask Azure SRE Agent:
 ```
-What are common causes of slow PostgreSQL queries in Azure Flexible Server?
+What are common causes of slow API responses in Azure Container Apps?
 ```
 
 Potential issues the agent may identify:
-1. **Missing indexes** - Database queries scanning full tables
-2. **Under-provisioned compute** - Not enough vCores/memory
-3. **Connection pooling** - Too many connection overhead
-4. **Network latency** - Cross-region calls
+1. **Misconfigured environment variables** - Debug/slow mode settings left enabled
+2. **Missing indexes** - Database queries scanning full tables
+3. **Under-provisioned compute** - Not enough vCores/memory
+4. **Connection pooling** - Too many connection overhead
+5. **Network latency** - Cross-region calls
 5. **Cold start** - Container Apps scaling from zero
 
 ### Step 8: Fix the Issue
 
-Based on the investigation, the issue is under-resourced Container App. Restore proper resource allocation:
+Based on the investigation, disable slow mode to restore normal performance:
 
 ```bash
 az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --cpu 0.5 \
-  --memory 1Gi
+  --set-env-vars "SLOW_MODE_DELAY=0"
 ```
 
 Wait about 30 seconds for the new revision to deploy.
