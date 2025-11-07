@@ -456,14 +456,20 @@ Diagnose why the container won't start and fix it.
 ### Step 1: Reproduce the Issue
 
 ```bash
-# Deploy a broken version - use a non-existent image to simulate image pull failure
+# Get the current API image
+ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+API_IMAGE="${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
+
+# Break the app by removing the required DATABASE_URL environment variable
+# The API will fail health checks and crash on startup
 az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --image mcr.microsoft.com/azuredocs/nonexistent-image:broken
+  --image $API_IMAGE \
+  --remove-env-vars "DATABASE_URL"
 ```
 
-Wait about 60 seconds for the deployment to fail. The revision will fail to provision because the container image doesn't exist.
+Wait about 60 seconds for the new revision to deploy. The container will start but fail health checks because it can't connect to the database.
 
 ### Step 2: Check App Status
 
@@ -514,20 +520,16 @@ Potential causes the agent may identify:
 4. **Missing secrets** - Required environment variables not set
 5. **Application crash** - Code error on startup
 
-### Step 6: Fix the Image
+### Step 6: Fix the Missing Environment Variable
 
-The issue is the non-existent image. Restore the working API image:
+The issue is the missing DATABASE_URL environment variable. Restore it by referencing the secret:
 
 ```bash
-# Get the ACR name and working image
-ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
-WORKING_IMAGE="${ACR_NAME}.azurecr.io/workshop-api:v1.0.1"
-
-# Restore the working image
+# Restore the DATABASE_URL environment variable that references the secret
 az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --image $WORKING_IMAGE
+  --set-env-vars "DATABASE_URL=secretref:db-connection-string"
 ```
 
 Wait about 30 seconds for the new revision to deploy successfully.
