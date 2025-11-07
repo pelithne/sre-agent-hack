@@ -1,6 +1,6 @@
 # Azure SRE Agent Hackathon Workshop
 
-Welcome to the Azure SRE Agent Hackathon! This hands-on workshop will teach you how to leverage Azure's SRE Agent to troubleshoot, monitor, and maintain cloud applications like a pro.
+Welcome to the Azure SRE Agent Hackathon! This hands-on workshop will teach you how to leverage Azure's SRE Agent to troubleshoot, monitor, and maintain cloud applications.
 
 ## Workshop Overview
 
@@ -79,8 +79,8 @@ Familiarity with these Azure services is helpful but not required:
               │   PostgreSQL         │
               │   Flexible Server    │
               └──────────────────────┘
-                         │
-                         ▼
+                         
+                         
               ┌──────────────────────┐
               │  Azure Monitor       │
               │  Application Insights│
