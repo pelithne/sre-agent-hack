@@ -107,7 +107,7 @@ PSQL_SERVER=$(az postgres flexible-server list \
 az containerapp secret set \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --secrets "database-url=postgresql://invalid-host:5432/workshopdb"
+  --secrets "db-connection-string=postgresql://invalid-host:5432/workshopdb"
 
 # Get the current revision and restart it to apply the change
 CURRENT_REVISION=$(az containerapp revision list \
@@ -216,7 +216,7 @@ CORRECT_DB_URL="postgresql://workshopuser:YourSecurePassword123@${PSQL_HOST}:543
 az containerapp secret set \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --secrets "database-url=${CORRECT_DB_URL}"
+  --secrets "db-connection-string=${CORRECT_DB_URL}"
 
 # Get the current revision and restart it to apply the change
 CURRENT_REVISION=$(az containerapp revision list \
