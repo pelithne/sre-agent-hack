@@ -1072,7 +1072,7 @@ az containerapp update \
   --memory 1Gi
 
 # Example: Reduce Application Insights sampling
-az monitor app-insights component update \
+az monitor application-insights component update \
   --app $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \
   --sampling-percentage 50

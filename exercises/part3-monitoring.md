@@ -180,8 +180,8 @@ when there are more than 10 failed requests (5xx errors) in 5 minutes?
 Get Application Insights resource ID:
 
 ```bash
-APP_INSIGHTS_ID=$(az monitor app-insights component show \
-  --app $(az monitor app-insights component list \
+APP_INSIGHTS_ID=$(az monitor application-insights component show \
+  --app $(az monitor application-insights component list \
     --resource-group $RESOURCE_GROUP \
     --query "[0].name" -o tsv) \
   --resource-group $RESOURCE_GROUP \
