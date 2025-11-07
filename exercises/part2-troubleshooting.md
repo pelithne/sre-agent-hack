@@ -109,19 +109,14 @@ az containerapp secret set \
   --resource-group $RESOURCE_GROUP \
   --secrets "db-connection-string=postgresql://invalid-host:5432/workshopdb"
 
-# Get the current revision and restart it to apply the change
-CURRENT_REVISION=$(az containerapp revision list \
+# Force creation of a new revision by updating with a dummy environment variable
+az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --query "[?properties.active].name" -o tsv)
-
-az containerapp revision restart \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --revision $CURRENT_REVISION
+  --set-env-vars "FORCE_UPDATE=$(date +%s)"
 ```
 
-Wait about 30 seconds for the restart to complete, then proceed.
+Wait about 30 seconds for the new revision to deploy, then proceed.
 
 ### Step 2: Reproduce the Issue
 
@@ -218,19 +213,14 @@ az containerapp secret set \
   --resource-group $RESOURCE_GROUP \
   --secrets "db-connection-string=${CORRECT_DB_URL}"
 
-# Get the current revision and restart it to apply the change
-CURRENT_REVISION=$(az containerapp revision list \
+# Force creation of a new revision to apply the secret change
+az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --query "[?properties.active].name" -o tsv)
-
-az containerapp revision restart \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --revision $CURRENT_REVISION
+  --set-env-vars "FORCE_UPDATE=$(date +%s)"
 ```
 
-Wait about 30 seconds for the restart to complete.
+Wait about 30 seconds for the new revision to deploy.
 
 ### Step 8: Verify the Fix
 
@@ -484,17 +474,12 @@ az role assignment create \
   --scope $(az acr show --name $ACR_NAME --query id -o tsv)
 ```
 
-Then get the current revision and restart it:
+Then force creation of a new revision to apply the role assignment:
 ```bash
-CURRENT_REVISION=$(az containerapp revision list \
+az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP \
-  --query "[?properties.active].name" -o tsv)
-
-az containerapp revision restart \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --revision $CURRENT_REVISION
+  --set-env-vars "FORCE_UPDATE=$(date +%s)"
 ```
 
 ### Key Learnings
