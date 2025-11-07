@@ -1,29 +1,12 @@
 # Azure SRE Agent Hackathon Workshop
 
-Welcome to the Azure SRE Agent Hackathon! This hands-on workshop will teach you how to leverage Azure's SRE Agent to troubleshoot, monitor, and maintain cloud applications like a pro.
+Welcome to the Azure SRE Agent Hackathon! This hands-on workshop will teach you how to leverage Azure's SRE Agent to troubleshoot, monitor, and maintain cloud applications.
 
-## 🎯 Workshop Overview
+## Workshop Overview
 
 In this workshop, you'll build a complete cloud-native application on Azure and learn how to use Azure SRE Agent to diagnose issues, investigate incidents, and perform root cause analysis. You'll gain practical experience with modern Site Reliability Engineering practices in Azure.
 
-### What You'll Build
-
-A production-like architecture consisting of:
-- **Azure API Management** (Consumption tier) - API gateway and management layer
-- **Azure Container Apps** - Hosting a RESTful API application
-- **Azure Database for PostgreSQL** - Data persistence layer
-- **Azure Monitor** - Observability and alerting
-- **Application Insights** - Application performance monitoring
-
-### What You'll Learn
-
-1. **Infrastructure as Code** - Deploy Azure resources using Bicep templates
-2. **Application Deployment** - Containerize and deploy APIs to Azure Container Apps
-3. **SRE Agent Troubleshooting** - Use AI-powered diagnostics to identify and resolve issues
-4. **Incident Management** - Set up alerts, investigate incidents, and create RCA reports
-5. **Advanced SRE Practices** - Auto-remediation, performance optimization, and chaos engineering
-
-## 📋 Prerequisites
+## Prerequisites
 
 Before starting the workshop, ensure you have:
 
@@ -31,15 +14,16 @@ Before starting the workshop, ensure you have:
 - **Azure Subscription** with contributor access
 - **Azure CLI** (version 2.50.0 or later) - [Install](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - **Git** - [Install](https://git-scm.com/downloads)
-- **Docker** - [Install](https://docs.docker.com/get-docker/)
 - **Visual Studio Code** (recommended) - [Install](https://code.visualstudio.com/)
 - **Azure SRE Agent** access - [Setup Guide](https://learn.microsoft.com/azure/sre-agent/)
+
+> **Note:** Docker is NOT required. Container images are built using Azure Container Registry build tasks.
 
 ### Recommended
 - **Bicep CLI** - [Install](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install)
 - Basic understanding of:
   - REST APIs
-  - Containers and Docker
+  - Containers and containerization concepts
   - Azure fundamentals
   - SQL/PostgreSQL
 
@@ -50,7 +34,7 @@ Familiarity with these Azure services is helpful but not required:
 - Azure Database for PostgreSQL
 - Azure Monitor and Application Insights
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -78,8 +62,8 @@ Familiarity with these Azure services is helpful but not required:
               │   PostgreSQL         │
               │   Flexible Server    │
               └──────────────────────┘
-                         │
-                         ▼
+                         
+                         
               ┌──────────────────────┐
               │  Azure Monitor       │
               │  Application Insights│
@@ -95,7 +79,7 @@ Familiarity with these Azure services is helpful but not required:
 - **Observability**: Integrated monitoring with Application Insights and Azure Monitor
 - **Security**: Managed identities for secure service-to-service authentication
 
-## 🚀 Workshop Structure
+## Workshop Structure
 
 The workshop is divided into progressive parts:
 
@@ -167,7 +151,7 @@ Each exercise includes:
 - Automated cleanup script
 - Cost considerations and verification
 
-## 📚 Additional Resources
+## Additional Resources
 
 ### Workshop Materials
 - [Quick Deployment Script](./scripts/deploy.sh) - Automated deployment with validation
@@ -190,7 +174,7 @@ Each exercise includes:
 - [Microsoft SRE Resources](https://learn.microsoft.com/azure/site-reliability-engineering/)
 - [Azure Well-Architected Framework](https://learn.microsoft.com/azure/architecture/framework/)
 
-## ⏱️ Estimated Time
+## Estimated Time
 
 - **Part 1** (Setup & Deployment): 60-90 minutes
 - **Part 2** (SRE Agent Troubleshooting): 60-90 minutes
@@ -201,7 +185,7 @@ Each exercise includes:
 
 The workshop can be completed in one session or split across multiple sessions.
 
-## 🎓 Learning Objectives
+## Learning Objectives
 
 By the end of this workshop, you will be able to:
 
@@ -214,7 +198,7 @@ By the end of this workshop, you will be able to:
 ✅ Implement auto-remediation and advanced SRE practices  
 ✅ Apply chaos engineering principles to improve resilience  
 
-## 💡 Tips for Success
+## Tips for Success
 
 1. **Follow the parts in order** - Each builds on the previous
 2. **Take your time with exercises** - Understanding is more important than speed
@@ -224,7 +208,7 @@ By the end of this workshop, you will be able to:
 6. **Clean up resources** - Use the cleanup guide to avoid unexpected costs
 7. **Share your experience** - Contribute improvements via pull requests
 
-## 📞 Support
+## Support
 
 If you encounter issues during the workshop:
 
@@ -234,7 +218,7 @@ If you encounter issues during the workshop:
 4. Create an issue in this repository
 5. Use Azure SRE Agent - Ask it for help with Azure-specific issues
 
-## 🤝 Contributing
+## Contributing
 
 Found an issue or want to improve the workshop? Contributions are welcome!
 
@@ -245,4 +229,5 @@ Found an issue or want to improve the workshop? Contributions are welcome!
 
 ---
 
-**Ready to become an Azure SRE expert? Let's get started with [Part 1: Setup & Deployment](./exercises/part1-setup.md)!** 🚀
+**Ready to become an Azure SRE expert? Let's get started with [Part 1: Setup & Deployment](./exercises/part1-setup.md)!**
+

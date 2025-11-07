@@ -83,7 +83,7 @@ az apim api update \
 
 ## Test Results
 
-### ✅ Successful Tests
+### Successful Tests
 
 #### 1. Health Check Endpoint
 ```bash
@@ -120,7 +120,7 @@ GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/
 
 **Status**: ✅ **Working**
 
-### ⚠️ Known Issues
+### Known Issues
 
 #### 1. Database Authentication Failure
 
@@ -187,7 +187,7 @@ Internet → APIM Gateway → Container App → PostgreSQL
 
 ## Workshop Readiness
 
-### ✅ Ready for Workshop
+### Ready for Workshop
 
 1. **Infrastructure as Code**
    - Complete Bicep template with APIM operations
@@ -206,7 +206,7 @@ Internet → APIM Gateway → Container App → PostgreSQL
    - Participants will use SRE Agent to diagnose and fix connection issues
    - Perfect example of configuration mismatch
 
-### 📝 Next Steps
+### Next Steps
 
 1. **Merge feature/sample-api branch** - All APIM integration work is complete
 2. **Create workshop exercises** - Leverage the database issue as Exercise #1
