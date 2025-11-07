@@ -109,13 +109,13 @@ az containerapp secret set \
   --resource-group $RESOURCE_GROUP \
   --secrets "database-url=postgresql://invalid-host:5432/workshopdb"
 
-# Restart the container app to apply the change
-az containerapp revision restart \
+# Create a new revision to apply the change (forces restart)
+az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP
 ```
 
-Wait about 30 seconds for the restart to complete, then proceed.
+Wait about 30 seconds for the new revision to be ready, then proceed.
 
 ### Step 2: Reproduce the Issue
 
@@ -212,13 +212,13 @@ az containerapp secret set \
   --resource-group $RESOURCE_GROUP \
   --secrets "database-url=${CORRECT_DB_URL}"
 
-# Restart the container app
-az containerapp revision restart \
+# Create a new revision to apply the change (forces restart)
+az containerapp update \
   --name ${BASE_NAME}-dev-api \
   --resource-group $RESOURCE_GROUP
 ```
 
-Wait about 30 seconds for the restart to complete.
+Wait about 30 seconds for the new revision to be ready.
 
 ### Step 8: Verify the Fix
 
@@ -472,15 +472,11 @@ az role assignment create \
   --scope $(az acr show --name $ACR_NAME --query id -o tsv)
 ```
 
-Then restart:
+Then create a new revision to apply the change:
 ```bash
-az containerapp revision restart \
+az containerapp update \
   --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --revision $(az containerapp revision list \
-    --name ${BASE_NAME}-dev-api \
-    --resource-group $RESOURCE_GROUP \
-    --query "[0].name" -o tsv)
+  --resource-group $RESOURCE_GROUP
 ```
 
 ### Key Learnings
