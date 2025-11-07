@@ -39,7 +39,7 @@ Familiarity with these Azure services is helpful but not required:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         Internet                             │
-└────────────────────────┬────────────────────────────────────┘
+└────────────────────────┬────────────────────────────────────┘ 
                          │
                          ▼
               ┌──────────────────────┐
@@ -50,25 +50,20 @@ Familiarity with these Azure services is helpful but not required:
                          ▼
               ┌──────────────────────┐
               │   Container Apps     │
-              │   Environment        │
-              │  ┌────────────────┐  │
-              │  │  API Container │  │
-              │  │  (Python/Node) │  │
-              │  └────────┬───────┘  │
-              └───────────┼──────────┘
-                         │
-                         ▼
+              │   Environment        │             ┌──────────────────────┐
+              │  ┌────────────────┐  │             │ Azure Monitor        │
+              │  │  API Container │  │             │ Application Insights │
+              │  │  (Python/Node) │  │             │ Log Analytics        │  
+              │  └────────┬───────┘  │             └──────────────────────┘
+              └───────────┼──────────┘             
+                          │                        
+                          ▼
               ┌──────────────────────┐
               │   PostgreSQL         │
               │   Flexible Server    │
               └──────────────────────┘
                          
-                         
-              ┌──────────────────────┐
-              │  Azure Monitor       │
-              │  Application Insights│
-              │  Log Analytics       │
-              └──────────────────────┘
+    
 ```
 
 ### Architecture Highlights
@@ -87,15 +82,8 @@ The workshop is divided into progressive parts:
 - Set up your development environment
 - Understand the Bicep templates
 - Deploy Azure infrastructure (APIM, Container Apps, PostgreSQL)
-- Configure managed identity for ACR access
 - Test all API endpoints through APIM
 - Verify deployment and troubleshoot common issues
-
-**Learning Objectives:**
-- Deploy production-ready infrastructure using Bicep
-- Configure Azure services for containerized applications
-- Test end-to-end API functionality
-- Understand Azure architecture patterns
 
 ### [Part 2: SRE Agent Troubleshooting](./exercises/part2-troubleshooting.md) (60-90 minutes)
 - **Exercise 1**: API 500 errors - Database connectivity and VNet troubleshooting
@@ -170,53 +158,21 @@ Each exercise includes:
 - [Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview)
 
 ### SRE Principles
-- [Google SRE Book](https://sre.google/books/)
 - [Microsoft SRE Resources](https://learn.microsoft.com/azure/site-reliability-engineering/)
 - [Azure Well-Architected Framework](https://learn.microsoft.com/azure/architecture/framework/)
 
-## Estimated Time
-
-- **Part 1** (Setup & Deployment): 60-90 minutes
-- **Part 2** (SRE Agent Troubleshooting): 60-90 minutes
-- **Part 3** (Monitoring & Alerts): 60-90 minutes
-- **Advanced Exercises** (Optional): 120-240 minutes
-- **Total Core Workshop**: 3-4.5 hours
-- **Total with Advanced**: 5-8 hours
-
-The workshop can be completed in one session or split across multiple sessions.
 
 ## Learning Objectives
 
 By the end of this workshop, you will be able to:
 
-✅ Deploy production-ready infrastructure using Bicep IaC  
-✅ Containerize and deploy applications to Azure Container Apps  
-✅ Configure API Management to expose and secure APIs  
+✅ Deploy infrastructure using Bicep IaC  
 ✅ Use Azure SRE Agent to diagnose and resolve application issues  
-✅ Set up comprehensive monitoring and alerting with Azure Monitor  
+✅ Set up monitoring and alerting with Azure Monitor  
 ✅ Perform incident investigations and create RCA reports  
 ✅ Implement auto-remediation and advanced SRE practices  
 ✅ Apply chaos engineering principles to improve resilience  
 
-## Tips for Success
-
-1. **Follow the parts in order** - Each builds on the previous
-2. **Take your time with exercises** - Understanding is more important than speed
-3. **Use SRE Agent actively** - Practice asking good questions
-4. **Experiment freely** - The workshop environment is yours to explore
-5. **Document your learnings** - Keep notes of insights and solutions
-6. **Clean up resources** - Use the cleanup guide to avoid unexpected costs
-7. **Share your experience** - Contribute improvements via pull requests
-
-## Support
-
-If you encounter issues during the workshop:
-
-1. Check the [FAQ](./docs/FAQ.md) - 40+ common questions answered
-2. Review the [Cleanup Guide](./docs/cleanup.md) - For resource cleanup issues
-3. Check exercise troubleshooting sections - Each part includes common issues
-4. Create an issue in this repository
-5. Use Azure SRE Agent - Ask it for help with Azure-specific issues
 
 ## Contributing
 
@@ -226,8 +182,3 @@ Found an issue or want to improve the workshop? Contributions are welcome!
 - Submit improvements via Pull Requests
 - Share feedback and suggestions
 - Add your own advanced exercises
-
----
-
-**Ready to become an Azure SRE expert? Let's get started with [Part 1: Setup & Deployment](./exercises/part1-setup.md)!**
-
