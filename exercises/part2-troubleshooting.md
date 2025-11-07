@@ -244,7 +244,7 @@ The agent will suggest a diagnostic approach.
 ### Step 3: Check Application Insights
 
 ```bash
-APP_INSIGHTS_NAME=$(az monitor application-insights component list \
+APP_INSIGHTS_NAME=$(az monitor app-insights component list \
   --resource-group $RESOURCE_GROUP \
   --query "[0].name" -o tsv)
 
@@ -740,7 +740,7 @@ How do I update a Container App secret and ensure the app picks up the new value
 
 Get the correct connection string and follow the agent's guidance:
 ```bash
-CORRECT_CONNECTION_STRING=$(az monitor application-insights component show \
+CORRECT_CONNECTION_STRING=$(az monitor app-insights component show \
   --app $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \
   --query connectionString -o tsv)
