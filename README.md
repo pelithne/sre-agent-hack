@@ -38,7 +38,7 @@ Familiarity with these Azure services is helpful but not required:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Internet                             │
+│                         Internet                            │
 └────────────────────────┬────────────────────────────────────┘ 
                          │
                          ▼
