@@ -2,7 +2,7 @@
 
 Welcome to the Azure SRE Agent Hackathon! This hands-on workshop will teach you how to leverage Azure's SRE Agent to troubleshoot, monitor, and maintain cloud applications like a pro.
 
-## 🎯 Workshop Overview
+## Workshop Overview
 
 In this workshop, you'll build a complete cloud-native application on Azure and learn how to use Azure SRE Agent to diagnose issues, investigate incidents, and perform root cause analysis. You'll gain practical experience with modern Site Reliability Engineering practices in Azure.
 
@@ -23,7 +23,7 @@ A production-like architecture consisting of:
 4. **Incident Management** - Set up alerts, investigate incidents, and create RCA reports
 5. **Advanced SRE Practices** - Auto-remediation, performance optimization, and chaos engineering
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before starting the workshop, ensure you have:
 
@@ -51,7 +51,7 @@ Familiarity with these Azure services is helpful but not required:
 - Azure Database for PostgreSQL
 - Azure Monitor and Application Insights
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -96,7 +96,7 @@ Familiarity with these Azure services is helpful but not required:
 - **Observability**: Integrated monitoring with Application Insights and Azure Monitor
 - **Security**: Managed identities for secure service-to-service authentication
 
-## 🚀 Workshop Structure
+## Workshop Structure
 
 The workshop is divided into progressive parts:
 
@@ -168,7 +168,7 @@ Each exercise includes:
 - Automated cleanup script
 - Cost considerations and verification
 
-## 📚 Additional Resources
+## Additional Resources
 
 ### Workshop Materials
 - [Quick Deployment Script](./scripts/deploy.sh) - Automated deployment with validation
@@ -191,7 +191,7 @@ Each exercise includes:
 - [Microsoft SRE Resources](https://learn.microsoft.com/azure/site-reliability-engineering/)
 - [Azure Well-Architected Framework](https://learn.microsoft.com/azure/architecture/framework/)
 
-## ⏱️ Estimated Time
+## Estimated Time
 
 - **Part 1** (Setup & Deployment): 60-90 minutes
 - **Part 2** (SRE Agent Troubleshooting): 60-90 minutes
@@ -202,7 +202,7 @@ Each exercise includes:
 
 The workshop can be completed in one session or split across multiple sessions.
 
-## 🎓 Learning Objectives
+## Learning Objectives
 
 By the end of this workshop, you will be able to:
 
@@ -215,7 +215,7 @@ By the end of this workshop, you will be able to:
 ✅ Implement auto-remediation and advanced SRE practices  
 ✅ Apply chaos engineering principles to improve resilience  
 
-## 💡 Tips for Success
+## Tips for Success
 
 1. **Follow the parts in order** - Each builds on the previous
 2. **Take your time with exercises** - Understanding is more important than speed
@@ -225,7 +225,7 @@ By the end of this workshop, you will be able to:
 6. **Clean up resources** - Use the cleanup guide to avoid unexpected costs
 7. **Share your experience** - Contribute improvements via pull requests
 
-## 📞 Support
+## Support
 
 If you encounter issues during the workshop:
 
@@ -235,7 +235,7 @@ If you encounter issues during the workshop:
 4. Create an issue in this repository
 5. Use Azure SRE Agent - Ask it for help with Azure-specific issues
 
-## 🤝 Contributing
+## Contributing
 
 Found an issue or want to improve the workshop? Contributions are welcome!
 
@@ -246,4 +246,5 @@ Found an issue or want to improve the workshop? Contributions are welcome!
 
 ---
 
-**Ready to become an Azure SRE expert? Let's get started with [Part 1: Setup & Deployment](./exercises/part1-setup.md)!** 🚀
+**Ready to become an Azure SRE expert? Let's get started with [Part 1: Setup & Deployment](./exercises/part1-setup.md)!**
+

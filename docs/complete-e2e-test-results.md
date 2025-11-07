@@ -49,7 +49,7 @@ Complete end-to-end testing of the Workshop API through Azure API Management gat
 
 ## Complete Test Results
 
-### ✅ Test 1: Health Check
+### Test 1: Health Check
 ```bash
 GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/health
 ```
@@ -66,7 +66,7 @@ GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/health
 
 ---
 
-### ✅ Test 2: API Root Information
+### Test 2: API Root Information
 ```bash
 GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/
 ```
@@ -88,7 +88,7 @@ GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/
 
 ---
 
-### ✅ Test 3: List Items (Empty Database)
+### Test 3: List Items (Empty Database)
 ```bash
 GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items
 ```
@@ -102,7 +102,7 @@ GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items
 
 ---
 
-### ✅ Test 4: Create Item
+### Test 4: Create Item
 ```bash
 POST https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items
 Content-Type: application/json
@@ -130,7 +130,7 @@ Content-Type: application/json
 
 ---
 
-### ✅ Test 5: List Items (After Creation)
+### Test 5: List Items (After Creation)
 ```bash
 GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items
 ```
@@ -154,7 +154,7 @@ GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items
 
 ---
 
-### ✅ Test 6: Get Specific Item
+### Test 6: Get Specific Item
 ```bash
 GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items/1
 ```
@@ -176,7 +176,7 @@ GET https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items/1
 
 ---
 
-### ✅ Test 7: Update Item
+### Test 7: Update Item
 ```bash
 PUT https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items/1
 Content-Type: application/json
@@ -206,7 +206,7 @@ Content-Type: application/json
 
 ---
 
-### ✅ Test 8: Delete Item
+### Test 8: Delete Item
 ```bash
 DELETE https://sretest-test-apim-anthsowmeh3v4.azure-api.net/api/items/1
 ```
