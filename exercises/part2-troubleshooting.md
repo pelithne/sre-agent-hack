@@ -109,13 +109,19 @@ az containerapp secret set \
   --resource-group $RESOURCE_GROUP \
   --secrets "database-url=postgresql://invalid-host:5432/workshopdb"
 
-# Create a new revision to apply the change (forces restart)
-az containerapp update \
+# Get the current revision and restart it to apply the change
+CURRENT_REVISION=$(az containerapp revision list \
   --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP
+  --resource-group $RESOURCE_GROUP \
+  --query "[?properties.active].name" -o tsv)
+
+az containerapp revision restart \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --revision $CURRENT_REVISION
 ```
 
-Wait about 30 seconds for the new revision to be ready, then proceed.
+Wait about 30 seconds for the restart to complete, then proceed.
 
 ### Step 2: Reproduce the Issue
 
@@ -212,13 +218,19 @@ az containerapp secret set \
   --resource-group $RESOURCE_GROUP \
   --secrets "database-url=${CORRECT_DB_URL}"
 
-# Create a new revision to apply the change (forces restart)
-az containerapp update \
+# Get the current revision and restart it to apply the change
+CURRENT_REVISION=$(az containerapp revision list \
   --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP
+  --resource-group $RESOURCE_GROUP \
+  --query "[?properties.active].name" -o tsv)
+
+az containerapp revision restart \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --revision $CURRENT_REVISION
 ```
 
-Wait about 30 seconds for the new revision to be ready.
+Wait about 30 seconds for the restart to complete.
 
 ### Step 8: Verify the Fix
 
@@ -472,11 +484,17 @@ az role assignment create \
   --scope $(az acr show --name $ACR_NAME --query id -o tsv)
 ```
 
-Then create a new revision to apply the change:
+Then get the current revision and restart it:
 ```bash
-az containerapp update \
+CURRENT_REVISION=$(az containerapp revision list \
   --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP
+  --resource-group $RESOURCE_GROUP \
+  --query "[?properties.active].name" -o tsv)
+
+az containerapp revision restart \
+  --name ${BASE_NAME}-dev-api \
+  --resource-group $RESOURCE_GROUP \
+  --revision $CURRENT_REVISION
 ```
 
 ### Key Learnings
