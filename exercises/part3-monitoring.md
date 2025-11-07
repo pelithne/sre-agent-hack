@@ -22,7 +22,7 @@ If you're in a new terminal session, load your workshop environment:
 source scripts/workshop-env.sh
 
 # Verify all required variables are set
-verify_workshop_vars
+verify_vars
 ```
 
 ## Learning Objectives

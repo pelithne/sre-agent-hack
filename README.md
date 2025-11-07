@@ -90,10 +90,10 @@ This workshop includes a **persistent environment variable system** designed to 
 source scripts/workshop-env.sh
 
 # Set variables with automatic persistence
-set_workshop_var "BASE_NAME" "srepk"
+set_var "BASE_NAME" "srepk"
 
 # Verify all required variables
-verify_workshop_vars
+verify_vars
 ```
 
 📖 **See [Environment Variables Guide](./docs/environment-variables.md) for complete documentation**

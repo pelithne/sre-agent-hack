@@ -85,9 +85,9 @@ BASE_NAME="sre<your-initials>"  # Must be 3-15 characters, lowercase
 LOCATION="swedencentral"  # Or your preferred region
 
 # Use the helper function to set and persist variables
-set_workshop_var "BASE_NAME" "$BASE_NAME"
-set_workshop_var "LOCATION" "$LOCATION"
-set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
+set_var "BASE_NAME" "$BASE_NAME"
+set_var "LOCATION" "$LOCATION"
+set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 
 # Create resource group
 az group create \
@@ -98,12 +98,12 @@ az group create \
 **Example:**
 ```bash
 BASE_NAME="srepk"
-set_workshop_var "BASE_NAME" "$BASE_NAME"
-set_workshop_var "LOCATION" "swedencentral"
-set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
+set_var "BASE_NAME" "$BASE_NAME"
+set_var "LOCATION" "swedencentral"
+set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 ```
 
-> **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named. The `set_workshop_var` function automatically persists variables to `~/.workshop-env` so they survive shell timeouts.
+> **Note:** The `BASE_NAME` will be used to generate names for all Azure resources (ACR, Container App, APIM, etc.) to ensure they are unique and consistently named. The `set_var` function automatically persists variables to `~/.workshop-env` so they survive shell timeouts.
 
 ---
 
@@ -120,7 +120,7 @@ az acr create \
   --sku Basic
 
 # Persist the ACR name for later use
-set_workshop_var "ACR_NAME" "$ACR_NAME"
+set_var "ACR_NAME" "$ACR_NAME"
 ```
 
 > **Note:** This ACR will use managed identity authentication. Admin credentials are not needed since the Container App will authenticate using its managed identity (configured in Step 8).
@@ -254,13 +254,13 @@ SUBSCRIPTION_KEY=$(az rest \
 echo "Subscription Key: $SUBSCRIPTION_KEY"
 
 # Save important variables for later use
-set_workshop_var "DEPLOYMENT_NAME" "$DEPLOYMENT_NAME"
-set_workshop_var "APIM_URL" "$APIM_URL"
-set_workshop_var "SUBSCRIPTION_KEY" "$SUBSCRIPTION_KEY"
+set_var "DEPLOYMENT_NAME" "$DEPLOYMENT_NAME"
+set_var "APIM_URL" "$APIM_URL"
+set_var "SUBSCRIPTION_KEY" "$SUBSCRIPTION_KEY"
 
 # Verify all required variables are set and persisted
 echo ""
-verify_workshop_vars
+verify_vars
 ```
 
 ---

@@ -33,13 +33,13 @@ If variables are missing, you can manually set them:
 
 ```bash
 # Set variables manually if needed
-set_workshop_var "BASE_NAME" "sre<your-initials>"
-set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
-set_workshop_var "APIM_URL" "<your-apim-gateway-url>"
-set_workshop_var "SUBSCRIPTION_KEY" "<your-subscription-key>"
+set_var "BASE_NAME" "sre<your-initials>"
+set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
+set_var "APIM_URL" "<your-apim-gateway-url>"
+set_var "SUBSCRIPTION_KEY" "<your-subscription-key>"
 
 # Verify all required variables are set
-verify_workshop_vars
+verify_vars
 ```
 
 > **Tip**: To retrieve your APIM URL and subscription key if you've lost them, see the commands in Part 1, Step 9.

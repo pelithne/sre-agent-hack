@@ -41,61 +41,61 @@ export RESOURCE_GROUP="srepk-workshop"
 Use the workshop helper:
 ```bash
 # New way (automatically persistent)
-set_workshop_var "BASE_NAME" "srepk"
-set_workshop_var "RESOURCE_GROUP" "srepk-workshop"
+set_var "BASE_NAME" "srepk"
+set_var "RESOURCE_GROUP" "srepk-workshop"
 ```
 
 ### Verifying Variables
 
 Check that all required variables are set:
 ```bash
-verify_workshop_vars
+verify_vars
 ```
 
 ## Available Functions
 
-### `set_workshop_var VAR_NAME VAR_VALUE`
+### `set_var VAR_NAME VAR_VALUE`
 Sets an environment variable in the current session AND persists it to `~/.workshop-env`
 
 **Example:**
 ```bash
-set_workshop_var "BASE_NAME" "srepk"
-set_workshop_var "RESOURCE_GROUP" "srepk-workshop"
+set_var "BASE_NAME" "srepk"
+set_var "RESOURCE_GROUP" "srepk-workshop"
 ```
 
-### `load_workshop_vars`
+### `load_vars`
 Loads all persisted variables from `~/.workshop-env` and displays them
 
 **Example:**
 ```bash
-load_workshop_vars
+load_vars
 ```
 
-### `show_workshop_vars`
+### `show_vars`
 Displays all currently persisted workshop variables without loading them
 
 **Example:**
 ```bash
-show_workshop_vars
+show_vars
 ```
 
-### `verify_workshop_vars`
+### `verify_vars`
 Checks if all required workshop variables are set in the current session
 
 **Required variables:** `BASE_NAME`, `RESOURCE_GROUP`, `APIM_URL`, `SUBSCRIPTION_KEY`
 
 **Example:**
 ```bash
-verify_workshop_vars
+verify_vars
 # ✅ All required variables are set!
 ```
 
-### `clear_workshop_vars`
+### `clear_vars`
 Removes the `~/.workshop-env` file and clears all persisted variables
 
 **Example:**
 ```bash
-clear_workshop_vars
+clear_vars
 ```
 
 ## Usage in Workshop Exercises
@@ -106,9 +106,9 @@ clear_workshop_vars
 source scripts/workshop-env.sh
 
 # Set initial variables
-set_workshop_var "BASE_NAME" "srepk"
-set_workshop_var "LOCATION" "swedencentral"
-set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
+set_var "BASE_NAME" "srepk"
+set_var "LOCATION" "swedencentral"
+set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 
 # Continue with resource creation...
 # Variables are automatically persisted as they're created
@@ -120,7 +120,7 @@ set_workshop_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 source scripts/workshop-env.sh
 
 # Verify everything is ready
-verify_workshop_vars
+verify_vars
 
 # Continue with exercises...
 ```
@@ -156,7 +156,7 @@ export BASE_NAME="srepk"
 echo "export BASE_NAME=$BASE_NAME" >> ~/.workshop-env
 
 # Simply:
-set_workshop_var "BASE_NAME" "srepk"
+set_var "BASE_NAME" "srepk"
 ```
 
 ## Implementation Details
@@ -208,7 +208,7 @@ chmod 600 ~/.workshop-env
 ### Clear and Restart
 ```bash
 # Start fresh
-clear_workshop_vars
+clear_vars
 source scripts/workshop-env.sh
 # Re-run setup commands
 ```
@@ -218,8 +218,8 @@ source scripts/workshop-env.sh
 ### Custom Variables
 The helper can manage any environment variable:
 ```bash
-set_workshop_var "CUSTOM_VAR" "custom_value"
-set_workshop_var "API_VERSION" "2023-05-01"
+set_var "CUSTOM_VAR" "custom_value"
+set_var "API_VERSION" "2023-05-01"
 ```
 
 ### Integration with Scripts

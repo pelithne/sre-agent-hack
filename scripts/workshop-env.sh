@@ -6,12 +6,12 @@
 WORKSHOP_ENV_FILE="$HOME/.workshop-env"
 
 # Function to set and persist an environment variable
-set_workshop_var() {
+set_var() {
     local var_name="$1"
     local var_value="$2"
     
     if [ -z "$var_name" ] || [ -z "$var_value" ]; then
-        echo "Usage: set_workshop_var VAR_NAME VAR_VALUE"
+        echo "Usage: set_var VAR_NAME VAR_VALUE"
         return 1
     fi
     
@@ -35,7 +35,7 @@ set_workshop_var() {
 }
 
 # Function to load workshop environment variables
-load_workshop_vars() {
+load_vars() {
     if [ -f "$WORKSHOP_ENV_FILE" ]; then
         echo "Loading workshop environment variables from $WORKSHOP_ENV_FILE..."
         source "$WORKSHOP_ENV_FILE"
@@ -52,7 +52,7 @@ load_workshop_vars() {
 }
 
 # Function to show current workshop variables
-show_workshop_vars() {
+show_vars() {
     if [ -f "$WORKSHOP_ENV_FILE" ]; then
         echo "Workshop environment variables:"
         grep "^export " "$WORKSHOP_ENV_FILE" | sed 's/^export /  /' | sed 's/=/ = /'
@@ -62,7 +62,7 @@ show_workshop_vars() {
 }
 
 # Function to clear workshop variables
-clear_workshop_vars() {
+clear_vars() {
     if [ -f "$WORKSHOP_ENV_FILE" ]; then
         echo "Clearing workshop environment variables..."
         rm "$WORKSHOP_ENV_FILE"
@@ -74,7 +74,7 @@ clear_workshop_vars() {
 }
 
 # Function to verify required variables are set
-verify_workshop_vars() {
+verify_vars() {
     local required_vars=("BASE_NAME" "RESOURCE_GROUP" "APIM_URL" "SUBSCRIPTION_KEY")
     local missing_vars=()
     
@@ -108,7 +108,7 @@ verify_workshop_vars() {
 # Auto-load if script is sourced
 if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
     # Script is being sourced, auto-load variables
-    load_workshop_vars
+    load_vars
 fi
 
 # If script is run directly, show help
@@ -120,14 +120,14 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     echo "    source scripts/workshop-env.sh"
     echo ""
     echo "Available functions:"
-    echo "  set_workshop_var VAR_NAME VAR_VALUE  - Set and persist a variable"
-    echo "  load_workshop_vars                   - Load persisted variables"
-    echo "  show_workshop_vars                   - Show current persisted variables"
-    echo "  verify_workshop_vars                 - Check if required variables are set"
-    echo "  clear_workshop_vars                  - Clear all workshop variables"
+    echo "  set_var VAR_NAME VAR_VALUE           - Set and persist a variable"
+    echo "  load_vars                            - Load persisted variables"
+    echo "  show_vars                            - Show current persisted variables"
+    echo "  verify_vars                          - Check if required variables are set"
+    echo "  clear_vars                           - Clear all workshop variables"
     echo ""
     echo "Examples:"
-    echo "  set_workshop_var BASE_NAME \"srepk\""
-    echo "  set_workshop_var RESOURCE_GROUP \"srepk-workshop\""
-    echo "  verify_workshop_vars"
+    echo "  set_var BASE_NAME \"srepk\""
+    echo "  set_var RESOURCE_GROUP \"srepk-workshop\""
+    echo "  verify_vars"
 fi
