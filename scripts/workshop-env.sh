@@ -81,7 +81,8 @@ verify_vars() {
     echo "Verifying required workshop variables..."
     
     for var in "${required_vars[@]}"; do
-        if [ -z "${!var}" ]; then
+        local var_value=$(eval echo \$${var})
+        if [ -z "$var_value" ]; then
             missing_vars+=("$var")
         else
             echo "✓ $var is set"
