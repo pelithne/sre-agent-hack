@@ -4,7 +4,6 @@ Master the Azure SRE Agent through hands-on incident response and troubleshootin
 
 ## What You'll Learn
 
-**Primary Focus - SRE Agent Mastery:**
 - **Incident Detection**: Use SRE Agent to identify and triage application issues
 - **Root Cause Analysis**: Leverage AI-powered diagnostics to find problem sources
 - **Alert Management**: Configure intelligent alerting and response workflows
@@ -18,7 +17,7 @@ Master the Azure SRE Agent through hands-on incident response and troubleshootin
 
 ## Workshop Environment
 
-The SRE Agent needs a realistic application to troubleshoot! We provide a complete cloud-native stack that serves as your **troubleshooting playground**:
+The SRE Agent needs a realistic application to troubleshoot. We provide a complete cloud-native stack that serves as your **troubleshooting playground**:
 
 - **REST API**: Python FastAPI service (your primary troubleshooting target)
 - **Database**: PostgreSQL with potential connection and performance issues
@@ -47,14 +46,3 @@ Each exercise builds on the previous one and includes hands-on scenarios for pra
 ├── build.sh                    # Container image build script
 └── README.md                   # This file
 ```
-
-## Resources
-
-- **Workshop Guide**: [`exercises/part1-setup.md`](exercises/part1-setup.md) - Environment setup instructions
-- **Azure SRE Agent**: [Official Documentation](https://learn.microsoft.com/azure/sre-agent/)
-- **SRE Fundamentals**: [Microsoft SRE Resources](https://learn.microsoft.com/azure/site-reliability-engineering/)
-- **Incident Response**: [SRE Agent Best Practices](https://learn.microsoft.com/azure/sre-agent/)
-
----
-
-**Ready to become an SRE Agent expert? Deploy your environment and start troubleshooting!**
