@@ -1,324 +1,333 @@
-# Infrastructure - Bicep Templates
+# SRE Agent Hackathon - Infrastructure Deployment
 
-This directory contains the Bicep Infrastructure as Code (IaC) templates for the Azure SRE Agent Hackathon workshop.
+This repository contains the infrastructure-as-code (IaC) templates and deployment scripts for the SRE Agent Hackathon workshop.
 
-## Overview
+## 📋 Table of Contents
 
-The infrastructure deploys a complete cloud-native application stack on Azure with the following components:
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Two-Phase Deployment](#two-phase-deployment)
+- [Manual Deployment](#manual-deployment)
+- [Troubleshooting](#troubleshooting)
+- [Clean Up](#clean-up)
 
-### Core Services
-- **Azure API Management** (Consumption tier) - API gateway and management
-- **Azure Container Apps** - Serverless container hosting
-- **Azure Database for PostgreSQL** (Flexible Server) - Managed database
-- **Azure Virtual Network** - Network isolation and security
-- **Azure Monitor & Application Insights** - Observability and monitoring
-- **Azure Log Analytics** - Centralized logging
-- **Managed Identity** - Secure service-to-service authentication
+## 🎯 Overview
 
-### Network Architecture
-- Virtual Network with three subnets:
-  - Container Apps subnet (10.0.0.0/23)
-  - PostgreSQL subnet (10.0.2.0/24) - with delegation
-  - API Management subnet (10.0.3.0/24)
-- Private DNS zone for PostgreSQL private endpoint
-- Network integration for Container Apps
+The infrastructure is designed to support a production-ready SRE monitoring and alerting system with the following components:
 
-## Files
+- **Azure Container Apps**: Serverless container hosting for the API and Agent
+- **Azure Container Registry (ACR)**: Private container image storage
+- **PostgreSQL Flexible Server**: Managed database with private networking
+- **Azure Monitor**: Centralized logging and application insights
+- **Virtual Network**: Secure network isolation with private endpoints
+- **Managed Identity**: Secure authentication without secrets
 
-- **main.bicep** - Main infrastructure template
-- **main.bicepparam** - Parameters file with default values
-- **../scripts/deploy-infrastructure.sh** - Deployment automation script
+## 🏗️ Architecture
 
-## Prerequisites
+```mermaid
+graph TB
+    subgraph "Azure Subscription"
+        subgraph "Virtual Network (10.0.0.0/16)"
+            subgraph "Container Apps Subnet (10.0.0.0/23)"
+                CAE[Container Apps Environment]
+                API[API Container App]
+                AGENT[Agent Container App]
+            end
+            
+            subgraph "Database Subnet (10.0.2.0/24)"
+                PG[(PostgreSQL Flexible Server)]
+            end
+        end
+        
+        ACR[Azure Container Registry]
+        LAW[Log Analytics Workspace]
+        AI[Application Insights]
+        MI[Managed Identity]
+        
+        API --> PG
+        AGENT --> PG
+        API --> AI
+        AGENT --> AI
+        CAE --> LAW
+        MI --> ACR
+    end
+    
+    USER[Workshop Participants] --> API
+    USER --> AGENT
+```
 
-Before deploying, ensure you have:
+## ✅ Prerequisites
 
-1. **Azure CLI** (version 2.50.0 or later)
+1. **Azure CLI** installed and configured
    ```bash
-   az --version
-   ```
-
-2. **Azure subscription** with contributor access
-   ```bash
+   # Install Azure CLI (if not already installed)
+   curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+   
+   # Login to Azure
    az login
-   az account show
+   
+   # Set your subscription (if you have multiple)
+   az account set --subscription "your-subscription-id"
    ```
 
-3. **Bicep CLI** (optional, Azure CLI includes it)
+2. **Bicep CLI** (automatically installed with Azure CLI 2.20.0+)
    ```bash
+   # Verify Bicep is available
    az bicep version
    ```
 
-## Deployment
+3. **jq** for JSON processing (required for deployment scripts)
+   ```bash
+   # Install jq on Ubuntu/Debian
+   sudo apt-get install jq
+   
+   # Install jq on macOS
+   brew install jq
+   ```
 
-### Option 1: Using the Deployment Script (Recommended)
+4. **Container Application** ready to deploy
+   - Your application should be containerized with a Dockerfile
+   - Application should expose health checks on `/health`
+   - Environment variables for database connection should be configurable
 
-The easiest way to deploy the infrastructure:
+## 🚀 Two-Phase Deployment
+
+The deployment is split into two phases to solve the "chicken-and-egg" problem where Container Apps need an image that doesn't exist until ACR is deployed.
+
+### Phase 1: Infrastructure Deployment
+
+Deploys core infrastructure **without** Container Apps:
 
 ```bash
-# From the repository root
-cd scripts
-./deploy-infrastructure.sh
+cd infra/
+./deploy-phase1.sh
 ```
 
-You'll be prompted for:
-- PostgreSQL admin password (min 12 characters with uppercase, lowercase, and numbers)
+**What gets deployed:**
+- ✅ Azure Container Registry (ACR)
+- ✅ Virtual Network with subnets
+- ✅ PostgreSQL Flexible Server
+- ✅ Log Analytics & Application Insights
+- ✅ Managed Identity with ACR access
 
-The script will:
-- Validate prerequisites
-- Create the resource group
-- Deploy all infrastructure
-- Save outputs to `.deployment-outputs.env`
+**Outputs:**
+- ACR name and login server
+- Infrastructure resource IDs for Phase 2
 
-### Option 2: Manual Deployment with Azure CLI
+### Phase 2: Build & Deploy Applications
 
-If you prefer manual control:
+Builds your container image and deploys Container Apps:
 
 ```bash
-# Set variables
-RESOURCE_GROUP="sre-agent-workshop-rg"
-LOCATION="eastus"
-POSTGRES_PASSWORD="YourSecurePassword123!"
+# Build and push your container image
+cd ../src/api  # Adjust path to your application
+az acr build --registry <ACR_NAME> --image workshop-api:v1.0.0 .
 
+# Deploy Container Apps
+cd ../../infra/
+./deploy-phase2.sh
+```
+
+**What gets deployed:**
+- ✅ Container Apps Environment
+- ✅ API Container App
+- ✅ Application configuration & secrets
+
+## 🔧 Manual Deployment
+
+If you prefer to run the deployment manually:
+
+### Step 1: Deploy Infrastructure
+
+```bash
 # Create resource group
-az group create \
-  --name $RESOURCE_GROUP \
-  --location $LOCATION
+az group create --name rg-sre-agent-hackathon --location eastus
 
 # Deploy infrastructure
 az deployment group create \
-  --resource-group $RESOURCE_GROUP \
-  --template-file infra/main.bicep \
-  --parameters infra/main.bicepparam \
-  --parameters postgresAdminPassword="$POSTGRES_PASSWORD"
+  --resource-group rg-sre-agent-hackathon \
+  --template-file infrastructure.bicep \
+  --parameters \
+    environmentName=dev \
+    baseName=sreagent \
+    postgresAdminPassword='YourSecurePassword123!'
 ```
 
-### Option 3: Using Bicep CLI Directly
+### Step 2: Build Container Image
 
 ```bash
-# Validate template
-az bicep build --file infra/main.bicep
+# Get ACR name from deployment output
+ACR_NAME=$(az deployment group show \
+  --resource-group rg-sre-agent-hackathon \
+  --name infrastructure \
+  --query "properties.outputs.acrName.value" \
+  --output tsv)
 
-# What-if analysis (preview changes)
-az deployment group what-if \
-  --resource-group sre-agent-workshop-rg \
-  --template-file infra/main.bicep \
-  --parameters infra/main.bicepparam \
-  --parameters postgresAdminPassword="YourPassword123!"
+# Build and push image
+az acr build \
+  --registry $ACR_NAME \
+  --image workshop-api:v1.0.0 \
+  --file src/api/Dockerfile \
+  src/api
+```
 
-# Deploy
+### Step 3: Deploy Applications
+
+```bash
+# Get ACR login server
+ACR_LOGIN_SERVER=$(az deployment group show \
+  --resource-group rg-sre-agent-hackathon \
+  --name infrastructure \
+  --query "properties.outputs.acrLoginServer.value" \
+  --output tsv)
+
+# Deploy applications
 az deployment group create \
-  --resource-group sre-agent-workshop-rg \
-  --template-file infra/main.bicep \
-  --parameters infra/main.bicepparam \
-  --parameters postgresAdminPassword="YourPassword123!"
+  --resource-group rg-sre-agent-hackathon \
+  --template-file apps.bicep \
+  --parameters \
+    environmentName=dev \
+    baseName=sreagent \
+    containerImageRegistry=$ACR_LOGIN_SERVER \
+    containerImageName=workshop-api:v1.0.0 \
+    postgresAdminPassword='YourSecurePassword123!'
 ```
 
-## Parameters
+## 🧪 Testing Your Deployment
 
-### Required Parameters
-- **postgresAdminPassword** - Password for PostgreSQL admin user
-  - Minimum 12 characters
-  - Must contain uppercase, lowercase, and numbers
-  - **Important**: Use a strong password and store it securely (e.g., Azure Key Vault)
-
-### Optional Parameters (with defaults)
-- **location** - Azure region (default: resource group location)
-- **environmentName** - Environment identifier (default: 'dev')
-- **baseName** - Base name for resources (default: 'sreagent')
-- **postgresAdminUsername** - PostgreSQL admin username (default: 'workshopadmin')
-- **tags** - Resource tags (default: see main.bicepparam)
-
-## Deployment Time
-
-Expected deployment time: **10-15 minutes**
-
-The longest operations are:
-- PostgreSQL Flexible Server provisioning (~10 minutes)
-- Container Apps environment setup (~3-5 minutes)
-- API Management Consumption tier (~1-2 minutes)
-
-## Outputs
-
-After successful deployment, the following outputs are available:
+After successful deployment, test your API:
 
 ```bash
-# View outputs
-az deployment group show \
-  --name <deployment-name> \
-  --resource-group sre-agent-workshop-rg \
-  --query properties.outputs
+# Get API URL
+API_URL=$(az deployment group show \
+  --resource-group rg-sre-agent-hackathon \
+  --name apps \
+  --query "properties.outputs.apiContainerAppUrl.value" \
+  --output tsv)
+
+# Test health endpoint
+curl $API_URL/health
+
+# Test other endpoints
+curl $API_URL/api/metrics
 ```
 
-Key outputs:
-- `apimGatewayUrl` - API Management gateway URL
-- `containerAppFqdn` - Container App fully qualified domain name
-- `postgresServerFqdn` - PostgreSQL server hostname
-- `appInsightsName` - Application Insights instance name
-- `appInsightsConnectionString` - App Insights connection string (sensitive)
-- `managedIdentityClientId` - Managed identity client ID
+## 📊 Monitoring & Observability
 
-## Resource Naming Convention
+### Application Insights
 
-Resources follow this naming pattern:
+Your applications are automatically configured with Application Insights for:
+- ✅ Request tracking
+- ✅ Dependency monitoring  
+- ✅ Exception logging
+- ✅ Performance metrics
+
+### Log Analytics
+
+Container logs are forwarded to Log Analytics. Query them with:
+
+```kql
+// View recent container logs
+ContainerAppConsoleLogs_CL
+| where TimeGenerated > ago(1h)
+| order by TimeGenerated desc
+
+// View application requests
+AppRequests
+| where TimeGenerated > ago(1h)
+| order by TimeGenerated desc
 ```
-{baseName}-{environmentName}-{resourceType}-{uniqueSuffix}
-```
 
-Example:
-- Resource Group: `sre-agent-workshop-rg`
-- API Management: `sreagent-dev-apim-abc123xyz`
-- Container App: `sreagent-dev-api`
-- PostgreSQL: `sreagent-dev-psql-abc123xyz`
+### Metrics & Alerts
 
-## Cost Estimation
+Key metrics to monitor:
+- Container App CPU/Memory usage
+- Database connections and performance
+- API response times and error rates
+- Container restart counts
 
-Approximate monthly costs (East US region):
-- API Management (Consumption): ~$0-5/month (pay-per-use: $0.035/10K calls + $0.06/GB)
-- Container Apps: ~$15-30/month (depends on usage)
-- PostgreSQL (Burstable B1ms): ~$15-20/month
-- Application Insights: ~$5-10/month (depends on data volume)
-- Log Analytics: ~$5-10/month (depends on data volume)
-
-**Total: ~$40-70/month**
-
-For workshop purposes (a few hours), costs will be minimal (< $2).
-
-**Note:** Consumption tier APIM is significantly more cost-effective for workshops and development scenarios.
-
-## Security Considerations
-
-### Implemented Security Features
-1. **Managed Identity** - Container App uses managed identity (no passwords)
-2. **Private Networking** - PostgreSQL uses VNet integration
-3. **Secrets Management** - Connection strings stored as Container App secrets
-4. **TLS/SSL** - PostgreSQL requires SSL connections
-5. **Azure Monitor** - Comprehensive logging and monitoring
-
-### Additional Recommendations for Production
-1. **Azure Key Vault** - Store all secrets and credentials
-2. **Azure Private Link** - Private endpoints for all services
-3. **Network Security Groups** - Fine-grained network access control
-4. **Azure AD Authentication** - Replace SQL authentication with Azure AD
-5. **API Management Policies** - Rate limiting, IP filtering, JWT validation
-6. **Azure Policy** - Enforce organizational standards
-7. **Azure Defender** - Enable advanced threat protection
-
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-**Issue: Deployment fails with "Subnet is in use"**
+**1. Container App won't start**
 ```bash
-# Solution: Delete the resource group and retry
-az group delete --name sre-agent-workshop-rg --yes
+# Check container logs
+az containerapp logs show \
+  --name <CONTAINER_APP_NAME> \
+  --resource-group rg-sre-agent-hackathon
 ```
 
-**Issue: PostgreSQL deployment fails**
+**2. Database connection issues**
 ```bash
-# Check if the subnet delegation is correct
-az network vnet subnet show \
-  --resource-group sre-agent-workshop-rg \
-  --vnet-name sreagent-dev-vnet \
-  --name postgres-subnet \
-  --query delegations
+# Verify database server is running
+az postgres flexible-server show \
+  --name <POSTGRES_SERVER_NAME> \
+  --resource-group rg-sre-agent-hackathon
+
+# Check network connectivity
+az containerapp exec \
+  --name <CONTAINER_APP_NAME> \
+  --resource-group rg-sre-agent-hackathon \
+  --command "nc -zv <POSTGRES_FQDN> 5432"
 ```
 
-**Issue: Container App deployment fails**
+**3. ACR authentication issues**
 ```bash
-# Check Container Apps environment status
-az containerapp env show \
-  --name <env-name> \
-  --resource-group sre-agent-workshop-rg \
-  --query properties.provisioningState
+# Check managed identity has ACR access
+az role assignment list \
+  --assignee <MANAGED_IDENTITY_ID> \
+  --scope /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/rg-sre-agent-hackathon/providers/Microsoft.ContainerRegistry/registries/<ACR_NAME>
 ```
 
-**Issue: API Management takes too long**
+### Resource Naming
+
+All resources follow this naming convention:
+- Format: `{baseName}-{environment}-{resourceType}-{uniqueSuffix}`
+- Example: `sreagent-dev-api-abc123def`
+
+### Configuration Updates
+
+To update container configuration without redeployment:
 ```bash
-# This is normal - APIM provisioning takes 8-15 minutes
-# Check status:
-az apim show \
-  --name <apim-name> \
-  --resource-group sre-agent-workshop-rg \
-  --query provisioningState
+az containerapp update \
+  --name <CONTAINER_APP_NAME> \
+  --resource-group rg-sre-agent-hackathon \
+  --set-env-vars "NEW_VAR=value"
 ```
 
-### Validation
+## 🧹 Clean Up
 
-Verify deployment:
-
-```bash
-# List all resources
-az resource list \
-  --resource-group sre-agent-workshop-rg \
-  --output table
-
-# Check Container App status
-az containerapp show \
-  --name <app-name> \
-  --resource-group sre-agent-workshop-rg \
-  --query properties.runningStatus
-
-# Test PostgreSQL connectivity
-psql "host=<postgres-fqdn> port=5432 dbname=workshopdb user=workshopadmin sslmode=require"
-```
-
-## Cleanup
-
-To remove all resources:
+To delete all resources:
 
 ```bash
-# Delete the resource group (this deletes everything)
-az group delete \
-  --name sre-agent-workshop-rg \
-  --yes \
-  --no-wait
-
-# Or use the cleanup script
-cd scripts
-./cleanup.sh
+# Delete the entire resource group (WARNING: This deletes everything!)
+az group delete --name rg-sre-agent-hackathon --yes --no-wait
 ```
 
-## Customization
+To delete specific deployments:
+```bash
+# Delete applications only (keeps infrastructure)
+az deployment group delete \
+  --resource-group rg-sre-agent-hackathon \
+  --name apps
 
-### Changing PostgreSQL SKU
-Edit `infra/main.bicep`:
-```bicep
-sku: {
-  name: 'Standard_D2s_v3'  // Change to desired SKU
-  tier: 'GeneralPurpose'
-}
+# Delete infrastructure
+az deployment group delete \
+  --resource-group rg-sre-agent-hackathon \
+  --name infrastructure
 ```
 
-### Enabling High Availability
-Edit `infra/main.bicep`:
-```bicep
-highAvailability: {
-  mode: 'ZoneRedundant'  // or 'SameZone'
-  standbyAvailabilityZone: '2'
-}
-```
+## 📚 Additional Resources
 
-### Adding More Container Apps
-Add additional container app resources or create a module for reusability.
-
-## Next Steps
-
-After infrastructure deployment:
-
-1. ✅ Infrastructure deployed
-2. ⏭️ Deploy the sample API application ([Module 3](../docs/03-application.md))
-3. ⏭️ Configure API Management
-4. ⏭️ Start troubleshooting exercises
-
-## References
-
-- [Azure Bicep Documentation](https://learn.microsoft.com/azure/azure-resource-manager/bicep/)
-- [Azure Container Apps](https://learn.microsoft.com/azure/container-apps/)
-- [Azure API Management](https://learn.microsoft.com/azure/api-management/)
-- [Azure Database for PostgreSQL](https://learn.microsoft.com/azure/postgresql/)
-- [Azure Monitor](https://learn.microsoft.com/azure/azure-monitor/)
+- [Azure Container Apps Documentation](https://docs.microsoft.com/en-us/azure/container-apps/)
+- [Azure Bicep Documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
+- [PostgreSQL Flexible Server Documentation](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/)
+- [Application Insights Documentation](https://docs.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)
 
 ---
 
-**Questions or issues?** Check the [troubleshooting guide](../docs/troubleshooting.md) or create an issue.
+## 🤝 Contributing
+
+This infrastructure code is part of the SRE Agent Hackathon workshop. Feel free to submit issues and enhancement requests!

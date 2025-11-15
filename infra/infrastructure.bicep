@@ -1,14 +1,12 @@
 // ============================================================================
-// Azure SRE Agent Hackathon - Modular Infrastructure Template
+// Azure SRE Agent Hackathon - Infrastructure-Only Template (Phase 1)
 // ============================================================================
-// This modular template deploys a complete cloud-native application stack using
-// dedicated modules for each service category:
+// This template deploys core infrastructure without Container Apps:
 // - Networking: VNet, subnets, private DNS zones
 // - Monitoring: Log Analytics, Application Insights
 // - Identity: Managed identity with ACR integration
+// - ACR: Azure Container Registry for building images
 // - Database: PostgreSQL Flexible Server with private networking
-// - Container Apps: Environment and Container App with scaling
-// - API Management: APIM service with full API configuration
 // ============================================================================
 
 targetScope = 'resourceGroup'
@@ -41,14 +39,11 @@ param postgresAdminUsername string = 'sqladmin'
 @minLength(12)
 param postgresAdminPassword string
 
-@description('Container image for the API (will be built and pushed to ACR)')
-param containerImage string = 'workshop-api:latest'
-
 @description('Tags to apply to all resources')
 param tags ResourceTags = {
   Environment: environmentName
-  Project: 'SRE-Agent-Hackathon'
   ManagedBy: 'Bicep'
+  Project: 'SRE-Agent-Hackathon'
 }
 
 // ============================================================================
@@ -83,32 +78,19 @@ var databaseConfig = {
   highAvailability: 'Disabled'
 }
 
-var containerAppConfig = {
-  image: '${acr.outputs.acrLoginServer}/${containerImage}'
-  cpu: '0.5'
-  memory: '1Gi'
-  minReplicas: 1
-  maxReplicas: 3
-  targetPort: 8000
-  environmentVariables: []
-}
-
-var apiManagementConfig = {
-  skuName: 'Consumption'
-  skuCapacity: 0
-  publisherName: 'SRE Workshop'
-  publisherEmail: 'admin@contoso.com'
-  apiPathPrefix: 'api'
-  apiDisplayName: 'Workshop API'
-  apiDescription: 'RESTful API for SRE Agent Hackathon workshop'
-}
-
 var monitoringConfig = {
   logRetentionDays: 30
   applicationType: 'web'
   requestSource: 'rest'
   flowType: 'Bluefield'
   samplingPercentage: 100
+}
+
+var apiManagementConfig = {
+  skuName: 'Consumption'
+  skuCapacity: 0
+  publisherEmail: 'admin@workshop.local'
+  publisherName: 'Workshop Admin'
 }
 
 // ============================================================================
@@ -137,6 +119,16 @@ module monitoring './modules/monitoring.bicep' = {
   }
 }
 
+// Deploy Azure Container Registry
+module acr './modules/acr.bicep' = {
+  name: 'acr-deployment'
+  params: {
+    location: location
+    namingConfig: namingConfig
+    tags: tags
+  }
+}
+
 // Deploy identity infrastructure (depends on ACR)
 module identity './modules/identity.bicep' = {
   name: 'identity-deployment'
@@ -145,16 +137,6 @@ module identity './modules/identity.bicep' = {
     namingConfig: namingConfig
     tags: tags
     acrName: acr.outputs.acrName
-  }
-}
-
-// Deploy Azure Container Registry
-module acr './modules/acr.bicep' = {
-  name: 'acr-deployment'
-  params: {
-    location: location
-    namingConfig: namingConfig
-    tags: tags
   }
 }
 
@@ -171,36 +153,15 @@ module database './modules/database.bicep' = {
   }
 }
 
-// Deploy Container Apps infrastructure  
-module containerApps './modules/containerApps.bicep' = {
-  name: 'container-apps-deployment'
-  params: {
-    location: location
-    containerAppConfig: containerAppConfig
-    namingConfig: namingConfig
-    tags: tags
-    containerAppsSubnetId: networking.outputs.containerAppsSubnetId
-    logAnalyticsCustomerId: monitoring.outputs.logAnalyticsCustomerId
-    logAnalyticsSharedKey: monitoring.outputs.logAnalyticsSharedKey
-    managedIdentityId: identity.outputs.managedIdentityId
-    acrName: acr.outputs.acrName
-    postgresServerFqdn: database.outputs.postgresServerFqdn
-    postgresDatabaseName: database.outputs.postgresDatabaseName
-    postgresAdminUsername: database.outputs.postgresAdminUsername
-    postgresAdminPassword: postgresAdminPassword
-    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
-  }
-}
-
-// Deploy API Management infrastructure
-module apiManagement './modules/apiManagement.bicep' = {
-  name: 'api-management-deployment'
+// Deploy API Management infrastructure (without APIs - those come in Phase 2)
+module apiManagement './modules/apim-infrastructure.bicep' = {
+  name: 'apim-deployment'
   params: {
     location: location
     apiManagementConfig: apiManagementConfig
     namingConfig: namingConfig
     tags: tags
-    containerAppUrl: containerApps.outputs.containerAppUrl
+    apimSubnetId: networking.outputs.apimSubnetId
     appInsightsId: monitoring.outputs.appInsightsId
     appInsightsName: monitoring.outputs.appInsightsName
     appInsightsInstrumentationKey: monitoring.outputs.appInsightsInstrumentationKey
@@ -211,70 +172,71 @@ module apiManagement './modules/apiManagement.bicep' = {
 // Outputs
 // ============================================================================
 
-@description('API Management Gateway URL')
-output apimGatewayUrl string = apiManagement.outputs.apimGatewayUrl
-
-@description('API Management service name')
-output apimServiceName string = apiManagement.outputs.apimName
-
-@description('Complete API URL for testing')
-output apiUrl string = apiManagement.outputs.apiUrl
-
-@description('Container App FQDN')
-output containerAppFqdn string = containerApps.outputs.containerAppFqdn
-
-@description('Container App name')
-output containerAppName string = containerApps.outputs.containerAppName
-
-@description('PostgreSQL server FQDN')
-output postgresServerFqdn string = database.outputs.postgresServerFqdn
-
-@description('PostgreSQL database name')
-output postgresDatabaseName string = database.outputs.postgresDatabaseName
-
-@description('Application Insights name')
-output appInsightsName string = monitoring.outputs.appInsightsName
-
-@description('Application Insights connection string')
-output appInsightsConnectionString string = monitoring.outputs.appInsightsConnectionString
-
-@description('Log Analytics workspace ID')
-output logAnalyticsWorkspaceId string = monitoring.outputs.logAnalyticsId
-
-@description('Managed Identity client ID')
-output managedIdentityClientId string = identity.outputs.managedIdentityClientId
-
-@description('Managed Identity principal ID')
-output managedIdentityPrincipalId string = identity.outputs.managedIdentityPrincipalId
-
-@description('Virtual Network ID')
-output vnetId string = networking.outputs.vnetId
-
 @description('ACR Name')
 output acrName string = acr.outputs.acrName
 
 @description('ACR Login Server')
 output acrLoginServer string = acr.outputs.acrLoginServer
 
-@description('Container App URL')
-output containerAppUrl string = containerApps.outputs.containerAppUrl
+@description('Virtual Network ID')
+output vnetId string = networking.outputs.vnetId
 
-@description('Deployment summary')
+@description('Container Apps Subnet ID (for Phase 2)')
+output containerAppsSubnetId string = networking.outputs.containerAppsSubnetId
+
+@description('Managed Identity ID (for Phase 2)')
+output managedIdentityId string = identity.outputs.managedIdentityId
+
+@description('PostgreSQL Server FQDN')
+output postgresServerFqdn string = database.outputs.postgresServerFqdn
+
+@description('PostgreSQL Database Name')
+output postgresDatabaseName string = database.outputs.postgresDatabaseName
+
+@description('PostgreSQL Admin Username')
+output postgresAdminUsername string = database.outputs.postgresAdminUsername
+
+@description('Log Analytics Customer ID (for Phase 2)')
+output logAnalyticsCustomerId string = monitoring.outputs.logAnalyticsCustomerId
+
+@description('Log Analytics Shared Key (for Phase 2)')
+output logAnalyticsSharedKey string = monitoring.outputs.logAnalyticsSharedKey
+
+@description('Application Insights Connection String (for Phase 2)')
+output appInsightsConnectionString string = monitoring.outputs.appInsightsConnectionString
+
+@description('Application Insights ID (for Phase 2)')
+output appInsightsId string = monitoring.outputs.appInsightsId
+
+@description('Application Insights Name (for Phase 2)')
+output appInsightsName string = monitoring.outputs.appInsightsName
+
+@description('Application Insights Instrumentation Key (for Phase 2)')
+output appInsightsInstrumentationKey string = monitoring.outputs.appInsightsInstrumentationKey
+
+@description('APIM Service ID (for Phase 2)')
+output apimId string = apiManagement.outputs.apimId
+
+@description('APIM Service Name (for Phase 2)')
+output apimName string = apiManagement.outputs.apimName
+
+@description('APIM Gateway URL')
+output apimGatewayUrl string = apiManagement.outputs.apimGatewayUrl
+
+@description('Infrastructure deployment summary')
 output deploymentInfo object = {
   environment: environmentName
   baseName: baseName
   location: location
+  phase: 'infrastructure'
   acr: {
     name: acr.outputs.acrName
     loginServer: acr.outputs.acrLoginServer
   }
-  modules: {
-    networking: networking.outputs.vnetName
-    monitoring: monitoring.outputs.logAnalyticsName
-    identity: identity.outputs.managedIdentityName
-    acr: acr.outputs.acrName
-    database: database.outputs.postgresServerName
-    containerApps: containerApps.outputs.containerAppName
-    apiManagement: apiManagement.outputs.apimName
-  }
+  readyForPhase2: true
+  nextSteps: [
+    '1. Build container image: az acr build --registry ${acr.outputs.acrName} --image workshop-api:v1.0.0 --file src/api/Dockerfile src/api'
+    '2. Deploy Container Apps using infra/apps.bicep'
+    '3. Deploy API Management using infra/apim.bicep'
+  ]
 }

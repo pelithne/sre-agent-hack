@@ -113,34 +113,58 @@ set_var "RESOURCE_GROUP" "${BASE_NAME}-workshop"
 
 ---
 
-## Step 5: Create Azure Container Registry
+## Step 5: Two-Phase Deployment Approach
 
-Create an Azure Container Registry to store the workshop API container image:
+> ⚠️ **Important**: You MUST complete Phase 1 before attempting Phase 2 or 3. The phases have dependencies and cannot be skipped.
+
+### Phase 1: Infrastructure Deployment (Without Container Apps)
+
+First, deploy the core infrastructure:
 
 ```bash
-# Generate a unique ACR name and persist it
-set_var "ACR_NAME" "${BASE_NAME}acr$RANDOM"
-
-az acr create \
+az deployment group create \
+  --name infrastructure-deployment-$(date +%Y%m%d-%H%M%S) \
   --resource-group $RESOURCE_GROUP \
-  --name $ACR_NAME \
-  --sku Basic
+  --template-file infra/infrastructure.bicep \
+  --parameters baseName=$BASE_NAME \
+  --parameters postgresAdminPassword='YourSecurePassword123'
 ```
 
-> **Alternative: Traditional Environment Variables**
-> ```bash
-> export ACR_NAME="${BASE_NAME}acr$RANDOM"
-> ```
+⏱️ **Deployment time: ~8-12 minutes** 
 
-> **Note:** This ACR will use managed identity authentication. Admin credentials are not needed since the Container App will authenticate using its managed identity (configured in Step 8).
+> **What this deploys:**
+> - Azure Container Registry (ACR) with managed identity integration
+> - Virtual Network with proper segmentation
+> - Log Analytics and Application Insights for monitoring
+> - PostgreSQL Flexible Server with private networking
+> - API Management service (infrastructure only)
+> - Managed Identity with ACR access permissions
 
----
+**🔍 Verify Phase 1 Success:**
+```bash
+# Check that ACR was created
+az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv
 
-## Step 5: Build and Push API Image
+# If this returns empty, Phase 1 failed - check deployment status
+az deployment group show \
+  --name $(az deployment group list --resource-group $RESOURCE_GROUP --query "[?starts_with(name, 'infrastructure-deployment-')].name | [-1]" -o tsv) \
+  --resource-group $RESOURCE_GROUP \
+  --query "properties.provisioningState"
+```
 
-Build the FastAPI application container image using Azure Container Registry build tasks:
+### Phase 2: Build Container Image
+
+Once infrastructure deployment completes, build your container image:
 
 ```bash
+# Get ACR name directly from the resource group (much simpler!)
+ACR_NAME=$(az acr list --resource-group $RESOURCE_GROUP --query "[0].name" -o tsv)
+
+# Save ACR name for later use
+set_var "ACR_NAME" "$ACR_NAME"
+
+echo "ACR Name: $ACR_NAME"
+
 # Build and push the image using ACR build tasks
 az acr build \
   --registry $ACR_NAME \
@@ -149,32 +173,79 @@ az acr build \
   src/api
 ```
 
-> **Note:** ACR build tasks build the container image in the cloud, so you don't need Docker installed locally. The build process typically takes 1-2 minutes. You can watch the build logs in real-time as ACR builds and pushes the image.
+### Phase 3: Deploy Container Apps
 
----
-
-## Step 6: Deploy Infrastructure
-
-Deploy the complete workshop infrastructure:
+Now deploy the Container Apps with the actual built image:
 
 ```bash
+# Get ACR login server
+ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer -o tsv)
+
+# Persist the variable
+set_var "ACR_NAME" "$ACR_LOGIN_SERVER"
+
+echo "ACR Name: $ACR_LOGIN_SERVER"
+
+
+# Deploy Container Apps and APIM
 az deployment group create \
-  --name workshop-deployment-$(date +%Y%m%d-%H%M%S) \
+  --name apps-deployment-$(date +%Y%m%d-%H%M%S) \
   --resource-group $RESOURCE_GROUP \
-  --template-file infra/main.bicep \
+  --template-file infra/apps.bicep \
   --parameters baseName=$BASE_NAME \
-  --parameters containerImage=$ACR_NAME.azurecr.io/workshop-api:v1.0.0 \
-  --parameters acrName=$ACR_NAME \
+  --parameters containerImageRegistry=$ACR_LOGIN_SERVER \
+  --parameters containerImageName='workshop-api:v1.0.0' \
   --parameters postgresAdminPassword='YourSecurePassword123'
 ```
 
-⏱️ **Deployment time: ~10-12 minutes** (APIM is the slowest resource)
+⏱️ **Deployment time: ~8-12 minutes** (Container Apps + APIM Consumption tier)
 
-> **Note:** The deployment automatically grants the Container App's managed identity permission to pull images from ACR. No manual role assignment needed!
+**📊 Monitor Long-Running Deployment:**
+
+If the deployment is taking longer than expected, use these commands to monitor progress:
+
+```bash
+# Get the current deployment name
+CURRENT_DEPLOYMENT=$(az deployment group list --resource-group $RESOURCE_GROUP --query "[?starts_with(name, 'apps-deployment-')].name | [-1]" -o tsv)
+echo "Monitoring deployment: $CURRENT_DEPLOYMENT"
+
+# Check overall deployment status
+az deployment group show \
+  --name $CURRENT_DEPLOYMENT \
+  --resource-group $RESOURCE_GROUP \
+  --query "{State: properties.provisioningState, Duration: properties.duration, Timestamp: properties.timestamp}"
+
+# See which resources are still deploying
+az deployment operation group list \
+  --name $CURRENT_DEPLOYMENT \
+  --resource-group $RESOURCE_GROUP \
+  --query "[?properties.provisioningState=='Running'].{Resource: properties.targetResource.resourceName, Type: properties.targetResource.resourceType, Status: properties.provisioningState}" \
+  -o table
+
+# Check for any failed operations
+az deployment operation group list \
+  --name $CURRENT_DEPLOYMENT \
+  --resource-group $RESOURCE_GROUP \
+  --query "[?properties.provisioningState=='Failed'].{Resource: properties.targetResource.resourceName, Error: properties.statusMessage.error.message}" \
+  -o table
+
+# Monitor Container Apps Environment creation (usually the longest step)
+az containerapp env list \
+  --resource-group $RESOURCE_GROUP \
+  --query "[].{Name: name, ProvisioningState: properties.provisioningState, Location: location}" \
+  -o table
+```
+
+**Expected timeline for Phase 3:**
+- Container Apps Environment: ~8-10 minutes ⏰ (usually the longest step)
+- Container App: ~2-3 minutes  
+- APIM API Configuration: ~1-2 minutes
 
 ---
 
-## Step 7: Monitor Deployment Progress
+## Step 6: Monitor Deployment and Update Progress
+
+Check that the infrastructure deployed successfully and monitor the Container App update:
 
 While deployment is running, you can monitor progress.
 
@@ -214,7 +285,7 @@ az deployment operation group list \
 
 ---
 
-## Step 8: Verify Deployment
+## Step 7: Verify Deployment
 
 Once deployment completes, verify all resources were created successfully:
 
@@ -243,53 +314,33 @@ az apim api list \
 
 ---
 
-## Step 9: Get APIM Gateway URL and Subscription Key
+## Step 8: Get Container App URL and Test API
 
 ```bash
-# Get APIM gateway URL and save it
-APIM_URL=$(az apim show \
+# Get Container App URL from apps deployment
+API_URL=$(az deployment group show \
   --resource-group $RESOURCE_GROUP \
-  --name $APIM_NAME \
-  --query "gatewayUrl" -o tsv)
+  --name $(az deployment group list --resource-group $RESOURCE_GROUP --query "[?starts_with(name, 'apps-deployment-')].name | [-1]" -o tsv) \
+  --query "properties.outputs.apiContainerAppUrl.value" -o tsv)
 
-echo "APIM Gateway URL: $APIM_URL"
-set_var "APIM_URL" "$APIM_URL"
-
-# Get subscription key and save it  
-SUBSCRIPTION_KEY=$(az rest \
-  --method post \
-  --url "$(az apim show --resource-group $RESOURCE_GROUP --name $APIM_NAME --query id -o tsv)/subscriptions/master/listSecrets?api-version=2023-05-01-preview" \
-  --query "primaryKey" -o tsv)
-
-echo "Subscription Key: $SUBSCRIPTION_KEY"
-set_var "SUBSCRIPTION_KEY" "$SUBSCRIPTION_KEY"
-
-# Save deployment name as well
-set_var "DEPLOYMENT_NAME" "$DEPLOYMENT_NAME"
+echo "API URL: $API_URL"
+set_var "API_URL" "$API_URL"
 
 # Verify all required variables are set and persisted
 echo ""
 verify_vars
 ```
 
-> **Alternative: Traditional Environment Variables**
-> 
-> If you're using traditional environment variables instead of the workshop helper:
-> ```bash
-> export APIM_URL="<your-apim-gateway-url>"
-> export SUBSCRIPTION_KEY="<your-subscription-key>"
-> export DEPLOYMENT_NAME="<your-deployment-name>"
-> ```
+> **Note:** We're now connecting directly to the Container App, not through APIM. This simplifies the setup and eliminates the need for subscription keys.
 
 ---
 
-## Step 10: Test the API
+## Step 9: Test the API
 
-### 10.1: Test Health Endpoint
+### 9.1: Test Health Endpoint
 
 ```bash
-curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/health" | jq .
+curl -s "$API_URL/health" | jq .
 ```
 
 **Expected output:**
@@ -300,11 +351,10 @@ curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 }
 ```
 
-### 10.2: Test Root Endpoint
+### 9.2: Test Root Endpoint
 
 ```bash
-curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/" | jq .
+curl -s "$API_URL/" | jq .
 ```
 
 **Expected output:**
@@ -320,12 +370,11 @@ curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
 }
 ```
 
-### 10.3: Test CRUD Operations
+### 9.3: Test CRUD Operations
 
 #### Create an Item
 ```bash
 curl -X POST \
-  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Test Item",
@@ -333,7 +382,7 @@ curl -X POST \
     "price": 29.99,
     "quantity": 5
   }' \
-  "$APIM_URL/api/items" | jq .
+  "$API_URL/items" | jq .
 ```
 
 **Expected output:**
@@ -351,20 +400,17 @@ curl -X POST \
 
 #### List All Items
 ```bash
-curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items" | jq .
+curl -s "$API_URL/items" | jq .
 ```
 
 #### Get Specific Item
 ```bash
-curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items/1" | jq .
+curl -s "$API_URL/items/1" | jq .
 ```
 
 #### Update an Item
 ```bash
 curl -X PUT \
-  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Updated Item",
@@ -372,29 +418,21 @@ curl -X PUT \
     "price": 39.99,
     "quantity": 10
   }' \
-  "$APIM_URL/api/items/1" | jq .
+  "$API_URL/items/1" | jq .
 ```
 
 #### Delete an Item
 ```bash
-curl -X DELETE \
-  -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
-  "$APIM_URL/api/items/1"
+curl -X DELETE "$API_URL/items/1"
 ```
 
 ---
 
-## Step 12: Explore the Azure Portal
+## Step 10: Explore the Azure Portal
 
 1. Navigate to the Azure Portal: https://portal.azure.com
 2. Open your resource group: `$RESOURCE_GROUP`
 3. Explore the deployed resources:
-
-### API Management
-- Open APIM instance
-- Navigate to **APIs** → **workshop-api**
-- View the 7 operations: health-check, get-root, list-items, create-item, get-item, update-item, delete-item
-- Test operations using the built-in test console
 
 ### Container App
 - Open the Container App instance
@@ -415,7 +453,7 @@ curl -X DELETE \
 
 ---
 
-## Step 13: Verify Integration
+## Step 11: Verify Integration
 
 ### Check Application Insights Integration
 
@@ -449,13 +487,85 @@ Press `Ctrl+C` to stop following logs.
 
 ## Troubleshooting Common Issues
 
-### Issue 1: Deployment Fails at APIM
+### Issue 1: "ResourceNotFound" Errors During Apps Deployment
+
+**Symptom:** Phase 3 (apps deployment) fails with errors like:
+```
+The Resource 'Microsoft.ContainerRegistry/registries/xyz' under resource group 'xyz' was not found
+```
+
+**Root Cause:** You skipped Phase 1 (infrastructure deployment) or it failed.
+
+**Solution:** 
+1. First, check if Phase 1 was completed:
+   ```bash
+   # Check if infrastructure resources exist
+   az resource list --resource-group $RESOURCE_GROUP -o table
+   ```
+2. If no resources exist, run Phase 1:
+   ```bash
+   az deployment group create \
+     --name infrastructure-deployment-$(date +%Y%m%d-%H%M%S) \
+     --resource-group $RESOURCE_GROUP \
+     --template-file infra/infrastructure.bicep \
+     --parameters baseName=$BASE_NAME \
+     --parameters postgresAdminPassword='YourSecurePassword123'
+   ```
+3. Wait for Phase 1 to complete, then proceed with Phase 2 and 3.
+
+### Issue 2: Long Deployment Times (Phase 3)
+
+**Symptom:** Container Apps deployment is taking longer than 15 minutes
+
+**Diagnosis:** Use the monitoring commands from Phase 3 to identify bottlenecks:
+
+```bash
+# Get current deployment name and monitor progress
+CURRENT_DEPLOYMENT=$(az deployment group list --resource-group $RESOURCE_GROUP --query "[?starts_with(name, 'apps-deployment-')].name | [-1]" -o tsv)
+
+# Check which step is taking longest
+az deployment operation group list \
+  --name $CURRENT_DEPLOYMENT \
+  --resource-group $RESOURCE_GROUP \
+  --query "[].{Resource: properties.targetResource.resourceName, Type: properties.targetResource.resourceType, Status: properties.provisioningState, Duration: properties.duration}" \
+  -o table
+```
+
+**Common causes and solutions:**
+
+1. **Container Apps Environment taking >15 minutes:**
+   - This is usually normal in busy regions
+   - If >20 minutes, consider canceling and retrying in a different region
+   
+2. **Container App stuck on "Running" status:**
+   - Check if the container image exists and can be pulled:
+   ```bash
+   # Verify image exists in ACR
+   az acr repository show-tags --name $ACR_NAME --repository workshop-api
+   
+   # Check Container App status
+   az containerapp show --name ${BASE_NAME}-dev-api --resource-group $RESOURCE_GROUP --query "properties.provisioningState"
+   ```
+
+3. **Network-related delays:**
+   - VNet integration can be slow in some regions
+   - Check if subnets have enough available IPs
+
+**If deployment exceeds 25 minutes:**
+```bash
+# Cancel the deployment
+az deployment group cancel --name $CURRENT_DEPLOYMENT --resource-group $RESOURCE_GROUP
+
+# Try deploying in a different region or retry later
+```
+
+### Issue 3: Deployment Fails at APIM
 
 **Symptom:** Deployment fails with "Unable to activate API service"
 
 **Solution:** This is a temporary regional issue. Wait a few minutes and retry the deployment.
 
-### Issue 2: Container App Can't Pull from ACR
+### Issue 4: Container App Can't Pull from ACR
 
 **Symptom:** Container app shows "ImagePullBackOff" error
 
@@ -468,7 +578,7 @@ Press `Ctrl+C` to stop following logs.
    ```
 2. If missing, re-run the grant command from Step 4.4
 
-### Issue 3: API Returns 500 Error
+### Issue 5: API Returns 500 Error
 
 **Symptom:** API calls return 500 Internal Server Error
 
@@ -481,7 +591,7 @@ az containerapp logs show \
   --tail 50
 ```
 
-### Issue 4: APIM Gateway Returns 401 Unauthorized
+### Issue 6: APIM Gateway Returns 401 Unauthorized
 
 **Symptom:** API calls return 401 Unauthorized
 
@@ -490,7 +600,7 @@ az containerapp logs show \
 echo "Subscription Key: $SUBSCRIPTION_KEY"
 ```
 
-### Issue 5: No APIs in APIM
+### Issue 7: No APIs in APIM
 
 **Symptom:** APIM is deployed but no APIs are visible
 
@@ -524,13 +634,13 @@ az acr delete --name $ACR_NAME --yes
 
 Before moving to Part 2, verify:
 
-- [ ] All 7 APIM operations are visible in the portal
+- [ ] Container App is deployed and running
 - [ ] Health check endpoint returns 200 OK
 - [ ] At least one CRUD operation works (create or list items)
 - [ ] Application Insights shows recent requests
-- [ ] Container App is running and healthy
+- [ ] Container App is healthy in the Azure portal
 - [ ] PostgreSQL database is accessible from Container App
-- [ ] APIM gateway URL and subscription key are saved
+- [ ] API URL is saved and accessible
 
 ---
 
