@@ -60,6 +60,7 @@ Once deployed, you'll use the **Azure SRE Agent** to:
 ## Repository Structure
 
 ```
+├── exercises/                  # Workshop exercises and setup guides
 ├── infra/                      # Infrastructure as Code (Bicep templates)
 ├── src/api/                    # Sample REST API application
 ├── build.sh                    # Container image build script
@@ -68,7 +69,7 @@ Once deployed, you'll use the **Azure SRE Agent** to:
 
 ## Resources
 
-- **Workshop Guide**: [`infra/README.md`](infra/README.md) - Environment setup instructions
+- **Workshop Guide**: [`exercises/part1-setup.md`](exercises/part1-setup.md) - Environment setup instructions
 - **Azure SRE Agent**: [Official Documentation](https://learn.microsoft.com/azure/sre-agent/)
 - **SRE Fundamentals**: [Microsoft SRE Resources](https://learn.microsoft.com/azure/site-reliability-engineering/)
 - **Incident Response**: [SRE Agent Best Practices](https://learn.microsoft.com/azure/sre-agent/)
