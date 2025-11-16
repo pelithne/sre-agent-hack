@@ -358,18 +358,11 @@ curl -X DELETE "$API_URL/items/1"
 
 ### Application Insights
 1. In your resource group, find and click on the Application Insights resource (name: `${BASE_NAME}-insights`)
-2. **Application Map**:
-   - In the left menu under **Investigate**, click **Application map**
-   - **Expected behavior:** You may see "No data available. Get started with application map"
-   - This is normal - the current Container App only sends log telemetry, not request/dependency data
-   - APIM sends telemetry but may take 5-10 minutes to appear in the map
-   - If you see APIM components appear, click on them to see request metrics
-   - **Note:** For full application map visibility (Container App → Database), you would need to add distributed tracing middleware to the application code
-3. **Live Metrics**:
+2. **Live Metrics**:
    - In the left menu under **Investigate**, click **Live Metrics**
    - Make some API requests using curl
    - Watch real-time telemetry: incoming requests, outgoing requests, overall health
-4. **Logs (KQL Queries)**:
+3. **Logs (KQL Queries)**:
    - In the left menu under **Monitoring**, click **Logs**
    - Close the "Queries" dialog if it appears
    - Try querying recent requests or traces
