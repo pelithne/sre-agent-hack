@@ -361,7 +361,7 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 3. **Logs (KQL Queries)**:
    - In the left menu under **Monitoring**, click **Logs**
    - Close the "Queries" dialog if it appears
-   - **Important:** Ensure the query language is set to **KQL** (not SQL). Look for a dropdown at the top of the query editor and select "KQL" if needed
+   - **Important:** Ensure the query mode is set to **KQL** (not Simple mode). Look for a toggle or dropdown at the top of the query editor
    - Try these example queries:
      ```kql
      // View recent API requests
