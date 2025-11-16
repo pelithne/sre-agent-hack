@@ -360,13 +360,13 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 
 ### Application Insights
 1. In your resource group, find and click on the Application Insights resource (name: `${BASE_NAME}-insights`)
-2. **Application Map**:
+2. **Application Map** (requires Step 12):
    - In the left menu under **Investigate**, click **Application map**
-   - You'll see a visual representation of your application architecture
-   - The map shows: Container App → PostgreSQL database dependencies
+   - **Note:** With the default v1.0.0 image, the map will be mostly empty
+   - To populate the map with service dependencies, complete **Step 12 (Optional)** below
+   - After Step 12, you'll see: Container App → PostgreSQL database dependencies
    - Click on components to see detailed metrics (request rates, response times, failure rates)
    - Click on connections between components to see dependency performance
-   - Note: The map populates after telemetry data is collected (make some API requests first)
 3. **Live Metrics**:
    - In the left menu under **Investigate**, click **Live Metrics**
    - Make some API requests using curl
@@ -422,18 +422,26 @@ APP_INSIGHTS_ID=$(az monitor app-insights component show \
 
 echo "Application Insights App ID: $APP_INSIGHTS_ID"
 
-# Query recent requests (may return empty if no traffic yet)
+# Query recent requests
 az monitor app-insights query \
   --app $APP_INSIGHTS_ID \
   --analytics-query "requests | where timestamp > ago(1h) | order by timestamp desc | take 10" \
   --output table
 ```
 
-> **Note**: If the query returns empty results:
-> 1. Make sure you've made some API requests in Step 9
-> 2. Wait 2-3 minutes for telemetry to be ingested
-> 3. Try the query in the Azure Portal (Application Insights → Logs) instead
-> 4. Use the portal query from Step 10 for more reliable results
+> **Note**: This query will return **empty results** with the default v1.0.0 container image because it only includes basic logging, not request telemetry tracking.
+> 
+> **To get request telemetry:**
+> 1. Complete **Step 12 (Optional)** to enable distributed tracing with v1.1.0
+> 2. After Step 12, this query will show all HTTP requests with timing data
+> 
+> **Alternative for v1.0.0:** Query application logs instead:
+> ```bash
+> az monitor app-insights query \
+>   --app $APP_INSIGHTS_ID \
+>   --analytics-query "traces | where timestamp > ago(1h) | order by timestamp desc | take 10" \
+>   --output table
+> ```
 
 ### Check Container App Logs
 
