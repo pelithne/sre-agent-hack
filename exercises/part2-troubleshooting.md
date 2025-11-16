@@ -159,9 +159,11 @@ Now open your Azure SRE Agent chat interface and start the investigation. The ke
 ```
 I'm getting 500 errors from my Container App API when making POST requests. 
 The health endpoint returns 200 OK, but all CRUD operations fail with 500 Internal Server Error.
-My Container App is named srepeter8-dev-api in resource group srepeter8-workshop.
+My Container App is named <your-base-name>-dev-api in resource group <your-base-name>-workshop.
 How should I investigate this?
 ```
+
+> **Replace** `<your-base-name>` with your actual BASE_NAME (e.g., if BASE_NAME=srepeter8, use "srepeter8-dev-api").
 
 **What to expect:**
 - The agent will likely suggest checking Container App logs
@@ -183,13 +185,13 @@ How can I verify the correct PostgreSQL hostname for my flexible server?
 ```
 
 **Key Tips for Working with SRE Agent:**
-- Provide specific resource names (use your actual BASE_NAME, e.g., "srepeter8-dev-api")
+- Provide specific resource names (use your actual BASE_NAME in place of placeholders)
 - Share exact error messages from logs
 - Mention what you've already checked
 - Ask for step-by-step commands when needed
 - Request verification steps after applying fixes
 
-> **Important:** Replace placeholder names like "srepeter8" with your actual BASE_NAME in all queries to the SRE Agent.
+> **Important:** Always replace placeholders like `<your-base-name>` with your actual BASE_NAME in all queries to the SRE Agent.
 
 ### Step 4: Fix the Issue with Agent's Guidance
 
@@ -504,9 +506,11 @@ az containerapp show \
 ### Step 3: Consult SRE Agent
 
 ```
-My Container App (srepeter8-dev-api in resource group srepeter8-workshop) shows status 'Failed' and won't start. 
+My Container App (<your-base-name>-dev-api in resource group <your-base-name>-workshop) shows status 'Failed' and won't start. 
 How can I see why it's failing?
 ```
+
+> Replace `<your-base-name>` with your actual BASE_NAME.
 
 ### Step 4: Check Revision Status
 
@@ -1049,7 +1053,7 @@ Follow SRE Agent's guidance through:
 ```
 "My Azure Container App API returns 500 errors when accessing PostgreSQL. 
 The error message is 'connection refused'. Both resources are in the same VNet.
-Container App: srepk-dev-api in rg sre-workshop-pk"
+Container App: <your-base-name>-dev-api in resource group <your-base-name>-workshop"
 ```
 
 - **Bad:**
