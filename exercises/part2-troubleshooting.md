@@ -112,6 +112,7 @@ First, let's break the database connection to simulate the problem:
 PSQL_SERVER=$(az postgres flexible-server list \
   --resource-group $RESOURCE_GROUP \
   --query "[0].name" -o tsv)
+set_var "PSQL_SERVER" "$PSQL_SERVER"
 
 # Break the connection by updating the connection string with an invalid hostname
 az containerapp secret set \
@@ -213,6 +214,7 @@ PSQL_HOST=$(az postgres flexible-server show \
   --resource-group $RESOURCE_GROUP \
   --name $PSQL_SERVER \
   --query "fullyQualifiedDomainName" -o tsv)
+set_var "PSQL_HOST" "$PSQL_HOST"
 
 # Construct the correct connection string (use the password from your deployment)
 set_var "CORRECT_DB_URL" "postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
