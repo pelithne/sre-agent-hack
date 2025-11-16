@@ -151,97 +151,78 @@ curl -X POST \
   "$APIM_GATEWAY_URL/api/items"
 ```
 
-### Step 3: Gather Initial Information
+### Step 3: Use SRE Agent to Investigate
 
-In your Azure SRE Agent chat interface, ask:
+Now open your Azure SRE Agent chat interface and start the investigation. The key is to provide context and let the agent guide you through the troubleshooting process.
+
+**Initial Query:**
 ```
-I'm getting 500 errors from my Container App API when making POST requests. 
-The health endpoint returns 200 OK. How should I investigate this?
-```
-
-The agent will suggest checking logs and provide guidance on diagnostic steps.
-
-### Step 4: Check Container App Logs
-
-Based on SRE Agent's guidance, check the logs:
-
-```bash
-az containerapp logs show \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --tail 50
+I'm getting 500 errors from my Container App API (${BASE_NAME}-dev-api) when making POST requests. 
+The health endpoint returns 200 OK, but all CRUD operations fail with 500 Internal Server Error.
+The resource group is ${BASE_NAME}-workshop.
+How should I investigate this?
 ```
 
-### Step 5: Analyze the Error with SRE Agent
+**What to expect:**
+- The agent will likely suggest checking Container App logs
+- Follow the agent's commands to view logs
+- The agent may ask follow-up questions about your architecture
+- Share the error messages you find in the logs
 
-Share the log findings with SRE Agent:
+**Continue the conversation based on what the agent finds:**
+
+If the agent identifies database connection errors, ask:
 ```
-My Container App logs show database connection errors: 
-'could not translate host name'. What could cause this?
-```
-
-The agent will help identify potential root causes and suggest investigation steps.
-
-### Common Root Causes
-
-1. **Incorrect connection string** - Check environment variables
-2. **Network connectivity** - Verify VNet integration
-3. **Database firewall** - Check if Container App subnet is allowed
-4. **DNS resolution** - Private endpoint DNS configuration
-
-### Step 6: Diagnose with SRE Agent
-
-Ask the agent for specific diagnostic steps:
-```
-How can I verify PostgreSQL private endpoint DNS resolution 
-from my Container App in Azure?
+The logs show "could not translate host name 'invalid-host'". 
+This is a PostgreSQL connection error. How can I fix the database connection string?
 ```
 
-The agent will provide Azure-specific commands and checks.
-
-### Step 7: Fix the Issue
-
-Follow SRE Agent's recommendations. The issue is the invalid database connection string we set earlier.
-
-**Get the correct connection string:**
-```bash
-# Get the PostgreSQL connection details
-PSQL_SERVER=$(az postgres flexible-server list \
-  --resource-group $RESOURCE_GROUP \
-  --query "[0].name" -o tsv)
-
-PSQL_HOST=$(az postgres flexible-server show \
-  --resource-group $RESOURCE_GROUP \
-  --name $PSQL_SERVER \
-  --query "fullyQualifiedDomainName" -o tsv)
-set_var "PSQL_HOST" "$PSQL_HOST"
-
-# Construct the correct connection string (use the password from your deployment)
-set_var "CORRECT_DB_URL" "postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
-
-# Update the secret with the correct connection string
-az containerapp secret set \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --secrets "db-connection-string=${CORRECT_DB_URL}"
-
-# Force creation of a new revision to apply the secret change
-az containerapp update \
-  --name ${BASE_NAME}-dev-api \
-  --resource-group $RESOURCE_GROUP \
-  --set-env-vars "FORCE_UPDATE=$(date +%s)"
+If the agent suggests checking DNS resolution, ask:
+```
+How can I verify the correct PostgreSQL hostname for my flexible server 
+named ${PSQL_SERVER}?
 ```
 
-> **Alternative: Traditional Environment Variables**
-> ```bash
-> export CORRECT_DB_URL="postgresql://sqladmin:YourSecurePassword123@${PSQL_HOST}:5432/workshopdb?sslmode=require"
-> ```
+**Key Tips for Working with SRE Agent:**
+- Provide specific resource names when possible
+- Share exact error messages from logs
+- Mention what you've already checked
+- Ask for step-by-step commands when needed
+- Request verification steps after applying fixes
 
-Wait about 30 seconds for the new revision to deploy.
+### Step 4: Fix the Issue with Agent's Guidance
 
-### Step 8: Verify the Fix
+The agent should help you discover that the issue is the invalid database connection string we set in Step 1.
 
-After applying the fix, test again:
+**Ask the agent:**
+```
+I need to update the database connection string secret for my Container App.
+Can you show me the commands to:
+1. Get the correct PostgreSQL hostname
+2. Update the Container App secret with the correct connection string
+```
+
+**Follow the agent's commands.** The agent will likely provide commands similar to:
+- Getting PostgreSQL server details
+- Constructing the correct connection string
+- Updating the Container App secret
+- Restarting or updating the Container App to apply changes
+
+> **Note:** The correct connection string format is:
+> `postgresql://sqladmin:YourSecurePassword123@<psql-host>:5432/workshopdb?sslmode=require`
+> 
+> Ask the agent if you need help with the exact syntax or password retrieval.
+
+Wait about 30 seconds after applying the fix for the new revision to deploy.
+
+### Step 5: Verify the Fix with Agent's Help
+
+**Ask the agent:**
+```
+I've updated the database connection string. How can I verify that the API is now working correctly?
+```
+
+The agent will suggest verification steps. Then test the API:
 ```bash
 curl -X POST \
   -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" \
@@ -252,10 +233,24 @@ curl -X POST \
 
 ### Key Learnings
 
-- Always check application logs first
-- Connection string errors are common in container deployments
-- VNet integration requires proper DNS configuration
-- Azure SRE Agent provides contextual guidance for Azure-specific networking issues
+- **SRE Agent guides investigation**: Let the agent suggest diagnostic steps rather than running commands blindly
+- **Provide context**: Include resource names, error messages, and resource group information
+- **Interactive troubleshooting**: Have a conversation with the agent, sharing findings from each step
+- **Agent provides Azure-specific guidance**: The agent knows Azure networking, VNet integration, and private endpoints
+- **Follow-up questions**: Don't hesitate to ask "why" or request clarification on recommended steps
+- **Verification matters**: Always ask the agent how to verify the fix worked
+
+### Troubleshooting Pattern Applied
+
+This exercise demonstrated the **SRE Agent-First Investigation Pattern**:
+1. **Report symptoms** with specific details (500 errors, which operations fail)
+2. **Let agent suggest diagnostics** (check logs, examine configuration)
+3. **Share findings** (error messages, log excerpts)
+4. **Refine investigation** based on agent's analysis
+5. **Apply fix** using agent-provided commands
+6. **Verify resolution** with agent's recommended tests
+
+This pattern works for most production issues - start with symptoms, let the AI guide you, and iterate based on findings.
 
 ---
 
