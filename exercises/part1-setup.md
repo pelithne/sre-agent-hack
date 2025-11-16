@@ -360,13 +360,14 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 
 ### Application Insights
 1. In your resource group, find and click on the Application Insights resource (name: `${BASE_NAME}-insights`)
-2. **Application Map** (requires Step 12):
+2. **Application Map**:
    - In the left menu under **Investigate**, click **Application map**
-   - **Note:** With the default v1.0.0 image, the map will be mostly empty
-   - To populate the map with service dependencies, complete **Step 12 (Optional)** below
-   - After Step 12, you'll see: Container App → PostgreSQL database dependencies
+   - You'll see API Management (APIM) as the entry point
+   - The map shows: APIM → Container App backend dependencies
    - Click on components to see detailed metrics (request rates, response times, failure rates)
    - Click on connections between components to see dependency performance
+   - **Note:** Make some API requests first (Step 9) and wait 2-3 minutes for telemetry to populate
+   - For deeper Container App → PostgreSQL visibility, see **Step 12 (Optional)** below
 3. **Live Metrics**:
    - In the left menu under **Investigate**, click **Live Metrics**
    - Make some API requests using curl
@@ -422,20 +423,22 @@ APP_INSIGHTS_ID=$(az monitor app-insights component show \
 
 echo "Application Insights App ID: $APP_INSIGHTS_ID"
 
-# Query recent requests
+# Query recent requests from APIM
 az monitor app-insights query \
   --app $APP_INSIGHTS_ID \
   --analytics-query "requests | where timestamp > ago(1h) | order by timestamp desc | take 10" \
   --output table
 ```
 
-> **Note**: This query will return **empty results** with the default v1.0.0 container image because it only includes basic logging, not request telemetry tracking.
+> **Note**: This query shows requests tracked by API Management (APIM).
 > 
-> **To get request telemetry:**
-> 1. Complete **Step 12 (Optional)** to enable distributed tracing with v1.1.0
-> 2. After Step 12, this query will show all HTTP requests with timing data
+> **If the query returns empty:**
+> 1. Make sure you've made API requests through APIM in Step 9
+> 2. Wait 2-3 minutes for telemetry to be ingested into Application Insights
+> 3. Check the time synchronization on your machine (timestamp filter may be off)
+> 4. Try increasing the time window: `ago(1h)` → `ago(24h)`
 > 
-> **Alternative for v1.0.0:** Query application logs instead:
+> **To see application logs from the Container App:**
 > ```bash
 > az monitor app-insights query \
 >   --app $APP_INSIGHTS_ID \
@@ -456,16 +459,21 @@ Press `Ctrl+C` to stop following logs.
 
 ---
 
-## Step 12 (Optional): Enable Application Map
+## Step 12 (Optional): Enable Enhanced Application Map with Database Visibility
 
-> **Note:** By default, the Application Map in Application Insights will not show service dependencies because the container image doesn't include distributed tracing middleware. This is an optional step to enable it.
+> **Note:** By default, Application Map shows APIM → Container App dependencies (from APIM's built-in telemetry). This optional step adds **Container App → PostgreSQL** visibility by enabling distributed tracing within the Container App itself.
 
-### What is Application Map?
+### What This Adds
 
-Application Map provides a visual representation of your application architecture, showing:
-- How services connect to each other (Container App → PostgreSQL)
-- Request rates, response times, and failure rates for each component
-- Performance of dependencies and bottlenecks
+**Current (v1.0.0 with APIM telemetry):**
+- APIM → Container App dependencies ✓
+- Request timing from APIM perspective ✓
+
+**Enhanced (v1.1.0 with distributed tracing):**
+- Container App → PostgreSQL database dependencies ✓
+- Individual database query timing ✓
+- Complete end-to-end tracing from APIM → App → Database ✓
+- More detailed performance insights ✓
 
 ### Enable Distributed Tracing
 
