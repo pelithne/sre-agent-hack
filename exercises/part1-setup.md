@@ -214,7 +214,7 @@ APIM_GATEWAY_URL=$(az apim show \
   --query "gatewayUrl" -o tsv)
 
 # Construct the API URL (APIM gateway + API path)
-API_URL="${APIM_GATEWAY_URL}/workshop"
+API_URL="${APIM_GATEWAY_URL}/api"
 
 echo "APIM Gateway URL: $APIM_GATEWAY_URL"
 echo "API URL: $API_URL"
@@ -342,9 +342,9 @@ curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items
 
 ### Container App
 - Open the Container App instance
+- Check **Revisions** to see deployment history
 - Check **Metrics** for request counts and response times
 - View **Log stream** for real-time logs
-- Check **Revisions** to see deployment history
 
 ### Application Insights
 - Open Application Insights instance
