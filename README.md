@@ -27,6 +27,41 @@ The SRE Agent needs a realistic application to troubleshoot. We provide a comple
 
 *The application is intentionally complex enough to generate realistic incidents for SRE Agent practice.*
 
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          Internet                               │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │   API Management     │
+                  │  (APIM Gateway)      │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │   Container App      │
+                  │   (FastAPI)          │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │  PostgreSQL          │
+                  │  Flexible Server     │
+                  └──────────────────────┘
+
+         ┌─────────────────────────────────────┐
+         │   Application Insights              │
+         │   (Telemetry & Monitoring)          │
+         │                                     │
+         │   • APIM Request Logs               │
+         │   • Container App Traces            │
+         │   • Database Dependencies           │
+         └─────────────────────────────────────┘
+```
+
 ## Getting Started
 
 Ready to master the Azure SRE Agent? Follow the workshop exercises in order:
