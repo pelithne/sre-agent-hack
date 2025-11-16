@@ -355,15 +355,15 @@ curl -X DELETE "$API_URL/items/1"
    - In the left menu under **Application**, click **Revisions and replicas**
    - You'll see your current revision and deployment history
    - Each deployment creates a new revision for rollback capability
+5. **Application Map** (if available):
+   - In the left menu under **Monitoring**, look for **Application map**
+   - If present, this shows the Container App and its dependencies
+   - Wait 2-3 minutes after making API requests for telemetry to populate
+   - Click on components to see detailed metrics
 
 ### Application Insights
 1. In your resource group, find and click on the Application Insights resource (name: `${BASE_NAME}-insights`)
-2. **Application Map**:
-   - In the left menu under **Investigate**, click **Application map**
-   - Wait 2-3 minutes after making API requests for telemetry to populate
-   - You should see your application components and their dependencies
-   - Click on components to see detailed metrics
-3. **Live Metrics**:
+2. **Live Metrics**:
    - In the left menu under **Investigate**, click **Live Metrics**
    - Make some API requests using curl
    - Watch real-time telemetry: incoming requests, outgoing requests, overall health
