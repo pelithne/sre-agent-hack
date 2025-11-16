@@ -416,19 +416,37 @@ APP_INSIGHTS_ID=$(az monitor app-insights component show \
   --resource-group $RESOURCE_GROUP \
   --query "appId" -o tsv)
 
+# Persist for use across terminals
+set_var "APP_INSIGHTS_NAME" "$APP_INSIGHTS_NAME"
+set_var "APP_INSIGHTS_ID" "$APP_INSIGHTS_ID"
+
 echo "Application Insights App ID: $APP_INSIGHTS_ID"
+
+# Make a few test requests first to ensure fresh telemetry
+echo "Making test requests..."
+for i in {1..3}; do
+  curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/health" > /dev/null
+  sleep 1
+done
+
+echo "Waiting for telemetry ingestion (2-3 minutes)..."
+sleep 30
+echo "Querying Application Insights..."
 
 # Query recent requests (allow more time for telemetry ingestion)
 az monitor app-insights query \
   --app $APP_INSIGHTS_ID \
-  --analytics-query "requests | where timestamp > ago(1h) | order by timestamp desc | take 10" \
+  --analytics-query "requests | where timestamp > ago(2h) | order by timestamp desc | take 10" \
   --output table
 ```
 
 > **Note**: If the query returns empty results:
-> 1. Make sure you've made some API requests in Step 9
-> 2. Wait 2-3 minutes for telemetry to be ingested
-> 3. Telemetry ingestion can have delays; try the query in the Azure Portal (Application Insights → Logs) instead
+> 1. **APIM telemetry can take 5-10 minutes to appear** - this is normal for APIM Consumption tier
+> 2. **Verify in Azure Portal instead**: 
+>    - Navigate to Application Insights → Logs
+>    - Run the query: `requests | where timestamp > ago(1h) | take 10`
+>    - You should see requests from both APIM (cloud_RoleName contains "apim") and Container App
+> 3. If still empty after 10 minutes, check Live Metrics while making API requests to see real-time telemetry
 
 ### Check Container App Logs
 

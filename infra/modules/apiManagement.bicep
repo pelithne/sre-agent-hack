@@ -182,6 +182,7 @@ resource apimApiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@20
     verbosity: 'information'
     logClientIp: true
     httpCorrelationProtocol: 'W3C'
+    metrics: true
   }
 }
 
