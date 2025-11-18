@@ -136,7 +136,11 @@ def memory_leak_thread():
         leaked_bytes = 0
         while chaos_state["memory_leak"]["enabled"] and leaked_bytes < target_memory:
             try:
+                # Allocate memory and fill it with data to prevent optimization/deallocation
                 data = bytearray(chunk_size)
+                # Fill with non-zero data to ensure memory is actually allocated
+                for i in range(0, chunk_size, 1024):
+                    data[i] = (i % 256)
                 chaos_state["memory_leak"]["leak_data"].append(data)
                 leaked_bytes += chunk_size
                 
@@ -148,8 +152,13 @@ def memory_leak_thread():
                 logger.error("CHAOS: Memory allocation failed - memory limit reached")
                 break
         
+        # Keep the memory leaked until disabled
         if chaos_state["memory_leak"]["enabled"]:
-            logger.warning(f"CHAOS: Memory leak target reached - leaked {leaked_bytes / (1024**3):.2f} GB")
+            logger.warning(f"CHAOS: Memory leak target reached - leaked {leaked_bytes / (1024**3):.2f} GB - holding memory until disabled")
+            # Hold the memory by waiting while enabled
+            while chaos_state["memory_leak"]["enabled"]:
+                time.sleep(1)
+            logger.info("CHAOS: Memory leak disabled - memory will be released")
         else:
             logger.info("CHAOS: Memory leak thread stopped")
     except ImportError as e:
