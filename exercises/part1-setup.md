@@ -281,7 +281,7 @@ curl -X POST \
     "price": 29.99,
     "quantity": 5
   }' \
-  "$API_URL/items" | jq .
+  "$API_URL/api/items" | jq .
 ```
 
 **Expected output:**
@@ -299,12 +299,12 @@ curl -X POST \
 
 #### List All Items
 ```bash
-curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items" | jq .
+curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/api/items" | jq .
 ```
 
 #### Get Specific Item
 ```bash
-curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items/1" | jq .
+curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/api/items/1" | jq .
 ```
 
 #### Update an Item
@@ -318,12 +318,12 @@ curl -X PUT \
     "price": 39.99,
     "quantity": 10
   }' \
-  "$API_URL/items/1" | jq .
+  "$API_URL/api/items/1" | jq .
 ```
 
 #### Delete an Item
 ```bash
-curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/items/1"
+curl -X DELETE -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/api/items/1"
 ```
 
 ---
