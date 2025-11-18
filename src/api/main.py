@@ -626,9 +626,7 @@ async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
         delay = chaos_state["crash_app"]["intensity"]
         def crash_with_delay():
             if delay > 0:
-                logger.error(f"Application will crash in {delay} seconds...")
                 time.sleep(delay)
-            logger.critical("Application crash initiated by chaos engineering")
             # Trigger a fatal error
             os._exit(1)
         
