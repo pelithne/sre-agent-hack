@@ -458,7 +458,14 @@ async def chaos_dashboard():
 @app.get("/admin/chaos/status", tags=["Chaos Engineering"])
 async def get_chaos_status():
     """Get current status of all chaos faults"""
-    return chaos_state
+    # Return a serializable version without thread objects
+    status = {}
+    for fault_type, state in chaos_state.items():
+        status[fault_type] = {
+            "enabled": state["enabled"],
+            "intensity": state["intensity"]
+        }
+    return status
 
 @app.post("/admin/chaos/{fault_type}/enable", tags=["Chaos Engineering"])
 async def enable_chaos_fault(fault_type: str, config: ChaosConfig):
