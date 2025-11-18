@@ -87,44 +87,51 @@ def cpu_burn_thread():
 
 def memory_leak_thread():
     """Background thread that gradually leaks memory over time"""
-    import psutil
-    
-    logger.info("CHAOS: Memory leak thread started")
-    
-    # Get target duration in seconds
-    target_minutes = chaos_state["memory_leak"]["intensity"]
-    target_seconds = target_minutes * 60
-    
-    # Get available memory and calculate target (95% of available RAM)
-    available_memory = psutil.virtual_memory().available
-    target_memory = int(available_memory * 0.95)
-    
-    # Calculate chunk size and sleep interval
-    # Leak in small increments every second for smooth progression
-    chunk_size = max(1024 * 1024, target_memory // target_seconds)  # At least 1MB chunks
-    sleep_interval = 1.0  # Leak every second
-    
-    logger.warning(f"CHAOS: Memory leak configured - will leak ~{target_memory / (1024**3):.2f} GB over {target_minutes} minutes")
-    
-    leaked_bytes = 0
-    while chaos_state["memory_leak"]["enabled"] and leaked_bytes < target_memory:
-        try:
-            data = bytearray(chunk_size)
-            chaos_state["memory_leak"]["leak_data"].append(data)
-            leaked_bytes += chunk_size
-            
-            if len(chaos_state["memory_leak"]["leak_data"]) % 100 == 0:  # Log every 100 chunks
-                logger.warning(f"CHAOS: Leaked {leaked_bytes / (1024**2):.1f} MB / {target_memory / (1024**2):.1f} MB ({leaked_bytes / target_memory * 100:.1f}%)")
-            
-            time.sleep(sleep_interval)
-        except MemoryError:
-            logger.error("CHAOS: Memory allocation failed - memory limit reached")
-            break
-    
-    if chaos_state["memory_leak"]["enabled"]:
-        logger.warning(f"CHAOS: Memory leak target reached - leaked {leaked_bytes / (1024**3):.2f} GB")
-    else:
-        logger.info("CHAOS: Memory leak thread stopped")
+    try:
+        import psutil
+        
+        logger.info("CHAOS: Memory leak thread started")
+        
+        # Get target duration in seconds
+        target_minutes = chaos_state["memory_leak"]["intensity"]
+        target_seconds = target_minutes * 60
+        
+        # Get available memory and calculate target (95% of available RAM)
+        available_memory = psutil.virtual_memory().available
+        target_memory = int(available_memory * 0.95)
+        
+        # Calculate chunk size and sleep interval
+        # Leak in small increments every second for smooth progression
+        chunk_size = max(1024 * 1024, target_memory // target_seconds)  # At least 1MB chunks
+        sleep_interval = 1.0  # Leak every second
+        
+        logger.warning(f"CHAOS: Memory leak configured - will leak ~{target_memory / (1024**3):.2f} GB over {target_minutes} minutes")
+        
+        leaked_bytes = 0
+        while chaos_state["memory_leak"]["enabled"] and leaked_bytes < target_memory:
+            try:
+                data = bytearray(chunk_size)
+                chaos_state["memory_leak"]["leak_data"].append(data)
+                leaked_bytes += chunk_size
+                
+                if len(chaos_state["memory_leak"]["leak_data"]) % 100 == 0:  # Log every 100 chunks
+                    logger.warning(f"CHAOS: Leaked {leaked_bytes / (1024**2):.1f} MB / {target_memory / (1024**2):.1f} MB ({leaked_bytes / target_memory * 100:.1f}%)")
+                
+                time.sleep(sleep_interval)
+            except MemoryError:
+                logger.error("CHAOS: Memory allocation failed - memory limit reached")
+                break
+        
+        if chaos_state["memory_leak"]["enabled"]:
+            logger.warning(f"CHAOS: Memory leak target reached - leaked {leaked_bytes / (1024**3):.2f} GB")
+        else:
+            logger.info("CHAOS: Memory leak thread stopped")
+    except ImportError as e:
+        logger.error(f"CHAOS: Failed to import psutil - memory leak cannot start: {e}")
+    except Exception as e:
+        logger.error(f"CHAOS: Memory leak thread failed with error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
 
 def trigger_memory_leak():
     """Allocate memory that won't be freed"""
@@ -383,37 +390,55 @@ async def chaos_dashboard():
                     key: 'memory_leak',
                     title: 'Memory Leak',
                     description: 'Gradually leaks memory in background thread until 95% RAM consumed. Intensity controls duration in minutes.',
-                    intensityLabel: 'Minutes'
+                    intensityLabel: 'Minutes',
+                    min: 1,
+                    max: 30,
+                    step: 1
                 },
                 {
                     key: 'cpu_spike',
                     title: 'CPU Spike',
                     description: 'Spawns background thread burning CPU cycles. Intensity controls CPU utilization (0-100%).',
-                    intensityLabel: 'CPU %'
+                    intensityLabel: 'CPU %',
+                    min: 0,
+                    max: 100,
+                    step: 5
                 },
                 {
                     key: 'random_errors',
                     title: 'Random Errors',
                     description: 'Returns HTTP 500 errors randomly. Intensity controls error rate percentage.',
-                    intensityLabel: 'Error rate %'
+                    intensityLabel: 'Error rate %',
+                    min: 1,
+                    max: 100,
+                    step: 5
                 },
                 {
                     key: 'slow_responses',
                     title: 'Slow Responses',
                     description: 'Adds artificial delay to responses. Intensity controls delay in seconds.',
-                    intensityLabel: 'Delay (s)'
+                    intensityLabel: 'Delay (s)',
+                    min: 1,
+                    max: 30,
+                    step: 1
                 },
                 {
                     key: 'connection_leak',
                     title: 'Connection Leak',
                     description: 'Leaks database connections without closing them. Intensity controls leak probability.',
-                    intensityLabel: 'Leak rate %'
+                    intensityLabel: 'Leak rate %',
+                    min: 1,
+                    max: 100,
+                    step: 5
                 },
                 {
                     key: 'corrupt_data',
                     title: 'Corrupt Data',
                     description: 'Returns corrupted JSON responses. Intensity controls corruption rate percentage.',
-                    intensityLabel: 'Corruption rate %'
+                    intensityLabel: 'Corruption rate %',
+                    min: 1,
+                    max: 100,
+                    step: 5
                 }
             ];
 
@@ -450,10 +475,22 @@ async def chaos_dashboard():
             async function refreshStatus() {
                 const status = await fetchStatus();
                 const container = document.getElementById('faults-container');
+                
+                // Store current slider values to preserve user changes
+                const currentValues = {};
+                faults.forEach(fault => {
+                    const slider = document.getElementById(`intensity-${fault.key}`);
+                    if (slider) {
+                        currentValues[fault.key] = slider.value;
+                    }
+                });
+
                 container.innerHTML = '';
 
                 faults.forEach(fault => {
                     const state = status[fault.key];
+                    // Use current slider value if exists, otherwise use server state
+                    const currentValue = currentValues[fault.key] || state.intensity;
                     const card = document.createElement('div');
                     card.className = 'fault-card';
                     card.innerHTML = `
@@ -468,9 +505,9 @@ async def chaos_dashboard():
                             <button class="btn-enable" onclick="enableFault('${fault.key}')">Enable</button>
                             <button class="btn-disable" onclick="disableFault('${fault.key}')">Disable</button>
                             <input type="range" id="intensity-${fault.key}" 
-                                   min="1" max="100" value="${state.intensity}" 
-                                   oninput="document.getElementById('value-${fault.key}').innerText = this.value">
-                            <span class="intensity-label" id="value-${fault.key}">${state.intensity} ${fault.intensityLabel}</span>
+                                   min="${fault.min}" max="${fault.max}" step="${fault.step}" value="${currentValue}" 
+                                   oninput="document.getElementById('value-${fault.key}').innerText = this.value + ' ${fault.intensityLabel}'">
+                            <span class="intensity-label" id="value-${fault.key}">${currentValue} ${fault.intensityLabel}</span>
                         </div>
                     `;
                     container.appendChild(card);
