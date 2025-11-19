@@ -440,8 +440,9 @@ echo "Querying Application Insights via CLI..."
 az monitor app-insights query \
   --apps $APP_INSIGHTS_NAME \
   --resource-group $RESOURCE_GROUP \
-  --analytics-query "requests | where timestamp > ago(2h) | order by timestamp desc | take 10" \
-  --output table
+  --analytics-query "requests | where timestamp > ago(1h) | project timestamp, name, url, resultCode, duration | order by timestamp desc | take 10" \
+  | jq -r '["TIMESTAMP","NAME","URL","RESULT","DURATION"], (.tables[0].rows[] | map(tostring)) | @tsv' \
+  | column -t -s $'\t'
 ```
 
 > **Note**: 
