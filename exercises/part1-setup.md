@@ -430,25 +430,30 @@ for i in {1..3}; do
 done
 
 echo ""
-echo "Telemetry will be available in Application Insights after 2-5 minutes."
-echo "To view telemetry, use the Azure Portal (recommended):"
+echo "Waiting for telemetry ingestion (2-5 minutes)..."
+echo "APIM telemetry can take 5-10 minutes - this is normal for Consumption tier"
+sleep 30
+
+# Query Application Insights using CLI
 echo ""
-echo "1. Navigate to: https://portal.azure.com"
-echo "2. Go to Resource Groups → $RESOURCE_GROUP"
-echo "3. Click on Application Insights resource: $APP_INSIGHTS_NAME"
-echo "4. In the left menu, click 'Logs' under Monitoring"
-echo "5. Run this query:"
-echo ""
-echo "   requests | where timestamp > ago(1h) | take 10"
-echo ""
-echo "You should see requests from both APIM and Container App."
+echo "Querying Application Insights via CLI..."
+az monitor app-insights query \
+  --apps $APP_INSIGHTS_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --analytics-query "requests | where timestamp > ago(2h) | order by timestamp desc | take 10" \
+  --output table
 ```
 
 > **Note**: 
-> - **The Azure CLI command `az monitor app-insights query` is deprecated and may not work reliably**
-> - **Recommended approach**: Use the Azure Portal to query Application Insights logs (see instructions above)
 > - **APIM telemetry can take 5-10 minutes to appear** - this is normal for APIM Consumption tier
-> - **Alternative**: Check Live Metrics in the portal while making API requests to see real-time telemetry
+> - If the CLI query returns no results after waiting, telemetry may still be ingesting
+> - **Alternative: Query in Azure Portal**:
+>   1. Navigate to: https://portal.azure.com
+>   2. Go to Resource Groups → your resource group
+>   3. Click on Application Insights resource
+>   4. In the left menu, click **Logs** under Monitoring
+>   5. Run: `requests | where timestamp > ago(1h) | take 10`
+> - **Check Live Metrics**: View real-time telemetry while making API requests
 
 ### Check Container App Logs
 
