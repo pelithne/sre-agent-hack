@@ -410,29 +410,11 @@ APP_INSIGHTS_NAME=$(az resource list \
   --resource-type "microsoft.insights/components" \
   --query "[0].name" -o tsv)
 
-# Get Application Insights App ID
-APP_INSIGHTS_ID=$(az monitor app-insights component show \
-  --app $APP_INSIGHTS_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --query "appId" -o tsv)
 
 # Persist for use across terminals
 set_var "APP_INSIGHTS_NAME" "$APP_INSIGHTS_NAME"
-set_var "APP_INSIGHTS_ID" "$APP_INSIGHTS_ID"
 
-echo "Application Insights App ID: $APP_INSIGHTS_ID"
-
-# Make a few test requests first to ensure fresh telemetry
-echo "Making test requests..."
-for i in {1..3}; do
-  curl -s -H "Ocp-Apim-Subscription-Key: $SUBSCRIPTION_KEY" "$API_URL/health" > /dev/null
-  sleep 1
-done
-
-echo ""
-echo "Waiting for telemetry ingestion (2-5 minutes)..."
-echo "APIM telemetry can take 5-10 minutes - this is normal for Consumption tier"
-sleep 30
+echo "Application Insights App ID: $APP_INSIGHTS_NAME"
 
 # Query Application Insights using CLI
 echo ""
