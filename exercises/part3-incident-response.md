@@ -73,7 +73,7 @@ set_var CONTAINER_APP_ID "$CONTAINER_APP_ID"
 
 # Create CPU alert using percentage (Preview)
 az monitor metrics alert create \
-  --name "High-CPU-Container-App-percent" \
+  --name "High-CPU-Container-App" \
   --resource-group $RESOURCE_GROUP \
   --scopes $CONTAINER_APP_ID \
   --condition "avg CpuPercentage > 80" \
@@ -88,7 +88,7 @@ az monitor metrics alert create \
 ```bash
 # Create Memory alert using percentage (Preview)
 az monitor metrics alert create \
-  --name "High-Memory-Container-App-Percentage" \
+  --name "High-Memory-Container-App" \
   --resource-group $RESOURCE_GROUP \
   --scopes $CONTAINER_APP_ID \
   --condition "avg MemoryPercentage > 80" \
@@ -113,7 +113,7 @@ az monitor metrics alert show \
   --resource-group $RESOURCE_GROUP
 ```
 
-### Step 7: Test Alert by Generating CPU Load
+### Step 7: Test CPU Alert by Generating CPU Load
 
 Now you'll trigger the CPU alert by using the Chaos Dashboard to simulate high CPU usage.
 
@@ -147,6 +147,45 @@ Once you've verified the alert fired, disable the chaos fault to clear the alert
 # View alert history
 az monitor metrics alert show \
   --name "High-CPU-Container-App" \
+  --resource-group $RESOURCE_GROUP \
+  --query "{name:name, enabled:enabled, description:description, condition:criteria}" \
+  --output json | jq
+```
+
+### Step 8: Test Memory Alert by using up RAM
+
+Now you'll trigger the Memory alert by using the Chaos Dashboard to simulate a memory leak.
+
+**Enable Memory Leak:**
+
+1. Open the Chaos Dashboard in your browser (from Part 2, Step 4)
+2. Find the **Memory Leak** fault card
+3. Set the time  slider to **1** (to quickly use up all the RAM)
+4. Click **Enable** to activate the Memory Leak
+
+**Monitor the Alert:**
+
+Wait 2-4 minutes for the alert to trigger. 
+
+The alert will fire when the memory utilization exceeds 80% over a 1-minute window. The alert is evaluated every minute. It should trigger within 2-4 minutes of sustained high memory utilization.
+
+**Expected Result:** You should receive an email notification when the alert fires (if you configured an email in Step 1).
+
+### Step 8: Clear Alert by Stopping Memory Leak
+
+Once you've verified the alert fired, disable the chaos fault to clear the alert.
+
+**Disable Memory Leak:**
+
+1. In the Chaos Dashboard, find the **Memory Leak** card
+2. Click **Disable** to stop the memory leak
+
+**Check Alert Status:**
+
+```bash
+# View alert history
+az monitor metrics alert show \
+  --name "High-Memory-Container-App" \
   --resource-group $RESOURCE_GROUP \
   --query "{name:name, enabled:enabled, description:description, condition:criteria}" \
   --output json | jq
