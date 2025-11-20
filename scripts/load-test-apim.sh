@@ -111,10 +111,12 @@ fi
 # Remove trailing slash from APIM_URL if present
 APIM_URL=${APIM_URL%/}
 
-# Append /api path if not already present (workshop URLs point to gateway, not /api endpoint)
-if [[ ! "$APIM_URL" =~ /api$ ]]; then
-    APIM_URL="${APIM_URL}/api"
-fi
+# APIM operations have /api in their urlTemplate, so we need /api/api/ path
+# Gateway URL: https://...azure-api.net
+# API path prefix: /api
+# Operation urlTemplate: /api/items
+# Final path needed: /api/api/items
+APIM_URL="${APIM_URL}/api/api"
 
 print_info "Load Test Configuration:"
 echo "  APIM URL: $APIM_URL"
