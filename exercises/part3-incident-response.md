@@ -1,4 +1,4 @@
-# Part 3: Monitoring & Alerts
+# Part 3: Incident Response
 
 ## Overview
 
