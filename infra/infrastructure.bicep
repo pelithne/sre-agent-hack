@@ -72,7 +72,7 @@ var databaseConfig = {
   adminUsername: postgresAdminUsername
   adminPassword: postgresAdminPassword
   databaseName: 'workshopdb'
-  sku: 'Standard_B1ms'
+  sku: 'Standard_B2s'
   storageSizeGB: 32
   backupRetentionDays: 7
   highAvailability: 'Disabled'
